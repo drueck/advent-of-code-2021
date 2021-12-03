@@ -4,26 +4,10 @@
 
 use std::{env, fs::File, io::BufRead, io::BufReader};
 
-enum Direction {
-    Up,
-    Down,
-    Forward,
-}
-
-impl Direction {
-    fn from_str(direction: &str) -> Direction {
-        match direction {
-            "up" => Direction::Up,
-            "down" => Direction::Down,
-            "forward" => Direction::Forward,
-            _ => panic!("Invalid direction"),
-        }
-    }
-}
-
-struct Instruction {
-    direction: Direction,
-    units: i32,
+enum Instruction {
+    Up(i32),
+    Down(i32),
+    Forward(i32),
 }
 
 impl Instruction {
@@ -31,9 +15,11 @@ impl Instruction {
         let parts: Vec<&str> = instruction.split(" ").collect();
         let direction = parts[0];
         let units: i32 = parts[1].parse().expect("invalid units!");
-        Instruction {
-            direction: Direction::from_str(direction),
-            units: units,
+        match direction {
+            "up" => Instruction::Up(units),
+            "down" => Instruction::Down(units),
+            "forward" => Instruction::Forward(units),
+            _ => panic!("Invalid direction"),
         }
     }
 }
@@ -65,18 +51,9 @@ fn main() {
 
     for instruction in instructions {
         match instruction {
-            Instruction {
-                direction: Direction::Up,
-                units,
-            } => state.aim -= units,
-            Instruction {
-                direction: Direction::Down,
-                units,
-            } => state.aim += units,
-            Instruction {
-                direction: Direction::Forward,
-                units,
-            } => {
+            Instruction::Up(units) => state.aim -= units,
+            Instruction::Down(units) => state.aim += units,
+            Instruction::Forward(units) => {
                 state.position += units;
                 state.depth += state.aim * units;
             }
