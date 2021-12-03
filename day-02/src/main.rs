@@ -1,7 +1,5 @@
 // Advent of Code 2021: Day 2
-//
 // https://adventofcode.com/2021/day/2
-//
 // Usage `cargo run <input-file>
 
 use std::{env, fs::File, io::BufRead, io::BufReader};
@@ -25,14 +23,14 @@ impl Direction {
 
 struct Instruction {
     direction: Direction,
-    units: u32,
+    units: i32,
 }
 
 impl Instruction {
     fn from_str(instruction: &str) -> Instruction {
         let parts: Vec<&str> = instruction.split(" ").collect();
         let direction = parts[0];
-        let units: u32 = parts[1].parse().expect("invalid units!");
+        let units: i32 = parts[1].parse().expect("invalid units!");
         Instruction {
             direction: Direction::from_str(direction),
             units: units,
@@ -41,9 +39,10 @@ impl Instruction {
 }
 
 #[derive(Debug)]
-struct Position {
-    depth: u32,
-    position: u32,
+struct SubmarineState {
+    aim: i32,
+    depth: i32,
+    position: i32,
 }
 
 fn main() {
@@ -58,7 +57,8 @@ fn main() {
         .map(|s| Instruction::from_str(&s))
         .collect();
 
-    let mut position = Position {
+    let mut state = SubmarineState {
+        aim: 0,
         depth: 0,
         position: 0,
     };
@@ -68,18 +68,21 @@ fn main() {
             Instruction {
                 direction: Direction::Up,
                 units,
-            } => position.depth -= units,
+            } => state.aim -= units,
             Instruction {
                 direction: Direction::Down,
                 units,
-            } => position.depth += units,
+            } => state.aim += units,
             Instruction {
                 direction: Direction::Forward,
                 units,
-            } => position.position += units,
+            } => {
+                state.position += units;
+                state.depth += state.aim * units;
+            }
         }
     }
 
-    println!("The final position is {:?}", position);
-    println!("The answer is {}", position.depth * position.position);
+    println!("The final {:?}", state);
+    println!("The answer is {}", state.depth * state.position);
 }
