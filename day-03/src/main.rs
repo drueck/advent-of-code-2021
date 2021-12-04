@@ -4,44 +4,76 @@
 
 use std::{env, fs::File, io::BufRead, io::BufReader};
 
+fn counts(diagnostics: &Vec<Vec<char>>, index: usize) -> (usize, usize) {
+    let total_diagnostics = diagnostics.len();
+    let ones = diagnostics
+        .iter()
+        .filter(|instruction| instruction[index] == '1')
+        .count();
+    let zeros = total_diagnostics - ones;
+
+    (ones, zeros)
+}
+
+fn find_rating(diagnostics: &Vec<Vec<char>>, criteria_fn: &dyn Fn(usize, usize) -> char) -> usize {
+    let mut candidates = diagnostics.to_vec();
+    let diagnostic_length = candidates[0].len();
+    let mut index = 0;
+
+    while candidates.len() > 1 && index < diagnostic_length {
+        let (ones, zeros) = counts(&candidates, index);
+        candidates.retain(|candidate| candidate[index] == criteria_fn(ones, zeros));
+        index += 1;
+    }
+
+    if candidates.len() > 1 {
+        panic!("Failed to find a single rating that matched the criteria!");
+    }
+
+    let rating: String = candidates[0].iter().collect();
+
+    usize::from_str_radix(&rating, 2).unwrap()
+}
+
+fn find_oxygen_generator_rating(diagnostics: &Vec<Vec<char>>) -> usize {
+    find_rating(&diagnostics, &|ones, zeros| {
+        if ones >= zeros {
+            '1'
+        } else {
+            '0'
+        }
+    })
+}
+
+fn find_c02_scrubber_rating(diagnostics: &Vec<Vec<char>>) -> usize {
+    find_rating(&diagnostics, &|ones, zeros| {
+        if ones < zeros {
+            '1'
+        } else {
+            '0'
+        }
+    })
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     let input_file: &String = &args[1];
 
     let file = File::open(input_file).expect("no such file");
     let buf = BufReader::new(file);
-    let instructions: Vec<Vec<char>> = buf
+    let diagnostics: Vec<Vec<char>> = buf
         .lines()
         .map(|l| l.expect("could not parse line"))
         .map(|s| s.chars().collect())
         .collect();
 
-    let instruction_length = instructions[0].len();
-    let half_of_instructions = instructions.len() / 2;
+    let oxygen_generator_rating = find_oxygen_generator_rating(&diagnostics);
+    let c02_scrubber_rating = find_c02_scrubber_rating(&diagnostics);
 
-    let mut gamma_rate_string: String = "".to_string();
-    let mut epsilon_rate_string: String = "".to_string();
-
-    for i in 0..instruction_length {
-        let ones_count = instructions
-            .iter()
-            .filter(|instruction| instruction[i] == '1')
-            .count();
-
-        match ones_count > half_of_instructions {
-            true => {
-                gamma_rate_string.push('1');
-                epsilon_rate_string.push('0');
-            }
-            false => {
-                gamma_rate_string.push('0');
-                epsilon_rate_string.push('1');
-            }
-        }
-    }
-
-    let gamma_rate = u32::from_str_radix(&gamma_rate_string, 2).unwrap();
-    let epsilon_rate = u32::from_str_radix(&epsilon_rate_string, 2).unwrap();
-
-    println!("The answer is {}", gamma_rate * epsilon_rate);
+    println!("Oxygen generator rating: {}", oxygen_generator_rating);
+    println!("C02 scrubber rating: {}", c02_scrubber_rating);
+    println!(
+        "Life support rating: {}",
+        oxygen_generator_rating * c02_scrubber_rating
+    );
 }
