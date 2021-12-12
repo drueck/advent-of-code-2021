@@ -2,4 +2,4 @@
 
 [https://adventofcode.com/2021](https://adventofcode.com/2021)
 
-Trying this in Rust again for a second year.
+Trying this in Rust again for a second year, with Elixir as a fallback if I get stuck. ;)
