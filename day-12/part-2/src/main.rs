@@ -1,5 +1,5 @@
 // Advent of Code 2021: Day 12, Part 2
-// https://adventofcode.com/2021/day/11
+// https://adventofcode.com/2021/day/12
 // Usage `cargo run <input-file>
 
 use std::{collections::HashMap, env, fs::File, io::BufRead, io::BufReader};
