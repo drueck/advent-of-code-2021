@@ -1,8 +1,6 @@
-// Advent of Code 2021: Day 16, Part 1
+// Advent of Code 2021: Day 16, Part 2
 // https://adventofcode.com/2021/day/16
 // Usage `cargo run <input-file>
-
-// Leaving this rough (unrefactored) since I'll have to make a lot of changes for part 2!
 
 use std::{collections::HashMap, env, fs};
 
@@ -14,6 +12,39 @@ const LITERAL_CHUNK_LEN: usize = 5;
 struct Node {
     op: PacketType,
     operands: Vec<Node>,
+}
+
+impl Node {
+    fn eval(&self) -> usize {
+        match self.op {
+            PacketType::Literal(value) => value,
+            PacketType::Sum => self.operands.iter().map(|node| node.eval()).sum(),
+            PacketType::Product => self.operands.iter().map(|node| node.eval()).product(),
+            PacketType::Minimum => self.operands.iter().map(|node| node.eval()).min().unwrap(),
+            PacketType::Maximum => self.operands.iter().map(|node| node.eval()).max().unwrap(),
+            PacketType::LessThan => {
+                if self.operands[0].eval() < self.operands[1].eval() {
+                    1
+                } else {
+                    0
+                }
+            }
+            PacketType::GreaterThan => {
+                if self.operands[0].eval() > self.operands[1].eval() {
+                    1
+                } else {
+                    0
+                }
+            }
+            PacketType::EqualTo => {
+                if self.operands[0].eval() == self.operands[1].eval() {
+                    1
+                } else {
+                    0
+                }
+            }
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -93,8 +124,6 @@ impl Transmission {
             binary_string.push_str(hex_to_binary.get(&char).expect("not a hex digit"));
         }
 
-        println!("binary string: {}", binary_string);
-
         Self {
             binary_string,
             pointer: 0,
@@ -121,10 +150,7 @@ impl Transmission {
             self.add_literal_chunk(&mut val);
         }
         self.add_literal_chunk(&mut val);
-        println!("got binary string val for literal: {}", val);
-        let int_val = usize::from_str_radix(&val, 2).unwrap();
-        println!("got literal val: {}", int_val);
-        int_val
+        usize::from_str_radix(&val, 2).unwrap()
     }
 
     fn read_subpackets(&mut self) -> Vec<Node> {
@@ -151,10 +177,7 @@ impl Transmission {
 
                 self.pointer += bits_for_subpacket_count;
 
-                println!("we're going for {} subpackets", num_subpackets);
-
                 while subpackets.len() < num_subpackets {
-                    println!("adding a subpacket");
                     subpackets.push(self.read_next_packet());
                 }
             }
@@ -173,7 +196,6 @@ impl Transmission {
         let packet_type =
             PacketType::from_str(&self.binary_string[self.pointer..self.pointer + TYPE_LEN]);
         self.pointer += TYPE_LEN;
-        println!("found next packet type: {:?}", packet_type);
         packet_type
     }
 }
@@ -186,4 +208,5 @@ fn main() {
     let tree = transmission.read_next_packet();
 
     println!("tree: {:?}", tree);
+    println!("answer: {}", tree.eval());
 }
