@@ -4,7 +4,7 @@
 
 use itertools::Itertools;
 use std::collections::HashSet;
-use std::{env, fs::File, io::BufRead, io::BufReader};
+use std::{env, fs};
 
 // fn relative_vectors(beacons_from_scanner: &Vec<(i32, i32)>) -> HashSet<(i32, i32)> {
 //     let mut relative_vectors = HashSet::new();
@@ -25,45 +25,29 @@ struct Scanner {
 }
 
 fn parse_input(filename: &str) -> Vec<Scanner> {
-    let file = File::open(filename).expect("no such file");
-    let reader = BufReader::new(file);
-    let mut lines_iter = reader.lines().map(|l| l.unwrap());
-
-    let mut scanners = vec![];
-
-    let mut scanner = 0;
-    let mut beacon_vectors = vec![];
-    lines_iter.next(); // skip the first line
-
-    while let Some(line) = lines_iter.next() {
-        if line.trim().is_empty() {
-            continue;
-        }
-        if line.starts_with("--") {
-            scanners.push(Scanner {
-                number: scanner,
-                beacon_vectors: beacon_vectors.clone(),
-            });
-            scanner += 1;
-            beacon_vectors = vec![];
-        } else {
-            if let Some((x, y, z)) = line
-                .split(",")
-                .map(|num| num.parse::<isize>().unwrap())
-                .collect_tuple()
-            {
-                beacon_vectors.push((x, y, z));
-            } else {
-                panic!("programming error in input parsing");
-            }
-        }
-    }
-    scanners.push(Scanner {
-        number: scanner,
-        beacon_vectors: beacon_vectors.clone(),
-    });
-
-    scanners
+    fs::read_to_string(filename)
+        .expect("error reading input file")
+        .split("\n\n")
+        .map(|scanner_data| {
+            scanner_data
+                .trim()
+                .split("\n")
+                .skip(1)
+                .map(|coords| {
+                    coords
+                        .split(",")
+                        .map(|num| num.parse::<isize>().unwrap())
+                        .collect_tuple()
+                        .unwrap()
+                })
+                .collect()
+        })
+        .enumerate()
+        .map(|(number, beacon_vectors)| Scanner {
+            number,
+            beacon_vectors,
+        })
+        .collect()
 }
 
 fn main() {
@@ -73,5 +57,11 @@ fn main() {
 
     let scanners = parse_input(&filename);
 
-    println!("scanner 0: {:?}", scanners[0]);
+    for scanner in scanners {
+        println!(
+            "scanner: {}, beacons: {}",
+            scanner.number,
+            scanner.beacon_vectors.len()
+        );
+    }
 }
