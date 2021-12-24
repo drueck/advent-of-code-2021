@@ -6,6 +6,41 @@ use itertools::Itertools;
 use std::collections::HashSet;
 use std::{env, fs};
 
+type TransformFunction<'a> = &'a dyn Fn((isize, isize, isize)) -> (isize, isize, isize);
+
+const TRANSFORMATIONS: [TransformFunction; 24] = [
+    // positive z
+    &|(x, y, z)| (x, y, z),
+    &|(x, y, z)| (y, -x, z),
+    &|(x, y, z)| (-x, -y, z),
+    &|(x, y, z)| (-y, x, z),
+    // negative z
+    &|(x, y, z)| (-x, y, -z),
+    &|(x, y, z)| (y, x, -z),
+    &|(x, y, z)| (x, -y, -z),
+    &|(x, y, z)| (-y, -x, -z),
+    // positive x
+    &|(x, y, z)| (-z, y, x),
+    &|(x, y, z)| (y, z, x),
+    &|(x, y, z)| (z, -y, x),
+    &|(x, y, z)| (-y, -z, x),
+    // negative x
+    &|(x, y, z)| (-z, y, -x),
+    &|(x, y, z)| (y, z, -x),
+    &|(x, y, z)| (z, -y, -x),
+    &|(x, y, z)| (-y, -z, -x),
+    // positive y
+    &|(x, y, z)| (x, -z, y),
+    &|(x, y, z)| (z, -x, y),
+    &|(x, y, z)| (-x, z, y),
+    &|(x, y, z)| (z, x, y),
+    // negative y
+    &|(x, y, z)| (x, z, -y),
+    &|(x, y, z)| (z, -x, -y),
+    &|(x, y, z)| (-x, -z, -y),
+    &|(x, y, z)| (-z, x, -y),
+];
+
 // fn relative_vectors(beacons_from_scanner: &Vec<(i32, i32)>) -> HashSet<(i32, i32)> {
 //     let mut relative_vectors = HashSet::new();
 
@@ -21,10 +56,46 @@ use std::{env, fs};
 #[derive(Debug)]
 struct Scanner {
     number: usize,
+    transformation_number: usize,
     beacon_vectors: Vec<(isize, isize, isize)>,
 }
 
 impl Scanner {
+    // let transformations: Vec<fn((isize, isize, isize)) -> (isize, isize, isize)> = vec![
+    //     // positive z
+    //     |(x, y, z)| (x, y, z),
+    //     |(x, y, z)| (y, -x, z),
+    //     |(x, y, z)| (-x, -y, z),
+    //     |(x, y, z)| (-y, x, z),
+    //     // negative z
+    //     |(x, y, z)| (-x, y, -z),
+    //     |(x, y, z)| (y, x, -z),
+    //     |(x, y, z)| (x, -y, -z),
+    //     |(x, y, z)| (-y, -x, -z),
+    //     // positive x
+    //     |(x, y, z)| (-z, y, x),
+    //     |(x, y, z)| (y, z, x),
+    //     |(x, y, z)| (z, -y, x),
+    //     |(x, y, z)| (-y, -z, x),
+    //     // negative x
+    //     |(x, y, z)| (-z, y, -x),
+    //     |(x, y, z)| (y, z, -x),
+    //     |(x, y, z)| (z, -y, -x),
+    //     |(x, y, z)| (-y, -z, -x),
+    //     // positive y
+    //     |(x, y, z)| (x, -z, y),
+    //     |(x, y, z)| (z, -x, y),
+    //     |(x, y, z)| (-x, z, y),
+    //     |(x, y, z)| (z, x, y),
+    //     // negative y
+    //     |(x, y, z)| (x, z, -y),
+    //     |(x, y, z)| (z, -x, -y),
+    //     |(x, y, z)| (-x, -z, -y),
+    //     |(x, y, z)| (-z, x, -y),
+    // ];
+
+    // }
+
     fn relative_vectors(&self) -> HashSet<(isize, isize, isize)> {
         self.beacon_vectors
             .iter()
@@ -59,6 +130,7 @@ fn parse_input(filename: &str) -> Vec<Scanner> {
         .enumerate()
         .map(|(number, beacon_vectors)| Scanner {
             number,
+            transformation_number: 0,
             beacon_vectors,
         })
         .collect()
@@ -89,4 +161,49 @@ fn main() {
             intersection.count()
         );
     }
+
+    let (x, y, z): (isize, isize, isize) = (1, 3, 2);
+    // let transformations: Vec<fn((isize, isize, isize)) -> (isize, isize, isize)> = vec![
+    //     // positive z
+    //     |(x, y, z)| (x, y, z),
+    //     |(x, y, z)| (y, -x, z),
+    //     |(x, y, z)| (-x, -y, z),
+    //     |(x, y, z)| (-y, x, z),
+    //     // negative z
+    //     |(x, y, z)| (-x, y, -z),
+    //     |(x, y, z)| (y, x, -z),
+    //     |(x, y, z)| (x, -y, -z),
+    //     |(x, y, z)| (-y, -x, -z),
+    //     // positive x
+    //     |(x, y, z)| (-z, y, x),
+    //     |(x, y, z)| (y, z, x),
+    //     |(x, y, z)| (z, -y, x),
+    //     |(x, y, z)| (-y, -z, x),
+    //     // negative x
+    //     |(x, y, z)| (-z, y, -x),
+    //     |(x, y, z)| (y, z, -x),
+    //     |(x, y, z)| (z, -y, -x),
+    //     |(x, y, z)| (-y, -z, -x),
+    //     // positive y
+    //     |(x, y, z)| (x, -z, y),
+    //     |(x, y, z)| (z, -x, y),
+    //     |(x, y, z)| (-x, z, y),
+    //     |(x, y, z)| (z, x, y),
+    //     // negative y
+    //     |(x, y, z)| (x, z, -y),
+    //     |(x, y, z)| (z, -x, -y),
+    //     |(x, y, z)| (-x, -z, -y),
+    //     |(x, y, z)| (-z, x, -y),
+    // ];
+
+    for func in TRANSFORMATIONS {
+        println!("transformation: {:?}", func((x, y, z)));
+    }
+
+    // for scanner_0_relative_vectors in scanner_0.relative_vector_possibilities() {
+    //   for scanner_1_relative_vectors in sccanner_1.relative_vector_possibilities() {
+    //      let intersection =
+    //      scanner_0_relative_vectors.insersection(&scanner_1_relative_vectors).
+    //   }
+    // }
 }
