@@ -56,45 +56,18 @@ const TRANSFORMATIONS: [TransformFunction; 24] = [
 #[derive(Debug)]
 struct Scanner {
     number: usize,
-    transformation_number: usize,
     beacon_vectors: Vec<(isize, isize, isize)>,
+    transformation_index: usize,
 }
 
 impl Scanner {
-    // let transformations: Vec<fn((isize, isize, isize)) -> (isize, isize, isize)> = vec![
-    //     // positive z
-    //     |(x, y, z)| (x, y, z),
-    //     |(x, y, z)| (y, -x, z),
-    //     |(x, y, z)| (-x, -y, z),
-    //     |(x, y, z)| (-y, x, z),
-    //     // negative z
-    //     |(x, y, z)| (-x, y, -z),
-    //     |(x, y, z)| (y, x, -z),
-    //     |(x, y, z)| (x, -y, -z),
-    //     |(x, y, z)| (-y, -x, -z),
-    //     // positive x
-    //     |(x, y, z)| (-z, y, x),
-    //     |(x, y, z)| (y, z, x),
-    //     |(x, y, z)| (z, -y, x),
-    //     |(x, y, z)| (-y, -z, x),
-    //     // negative x
-    //     |(x, y, z)| (-z, y, -x),
-    //     |(x, y, z)| (y, z, -x),
-    //     |(x, y, z)| (z, -y, -x),
-    //     |(x, y, z)| (-y, -z, -x),
-    //     // positive y
-    //     |(x, y, z)| (x, -z, y),
-    //     |(x, y, z)| (z, -x, y),
-    //     |(x, y, z)| (-x, z, y),
-    //     |(x, y, z)| (z, x, y),
-    //     // negative y
-    //     |(x, y, z)| (x, z, -y),
-    //     |(x, y, z)| (z, -x, -y),
-    //     |(x, y, z)| (-x, -z, -y),
-    //     |(x, y, z)| (-z, x, -y),
-    // ];
-
-    // }
+    fn new(number: usize, beacon_vectors: &Vec<(isize, isize, isize)>) -> Self {
+        Scanner {
+            number,
+            beacon_vectors: beacon_vectors.clone(),
+            transformation_index: 0,
+        }
+    }
 
     fn relative_vectors(&self) -> HashSet<(isize, isize, isize)> {
         self.beacon_vectors
@@ -128,11 +101,7 @@ fn parse_input(filename: &str) -> Vec<Scanner> {
                 .collect()
         })
         .enumerate()
-        .map(|(number, beacon_vectors)| Scanner {
-            number,
-            transformation_number: 0,
-            beacon_vectors,
-        })
+        .map(|(number, beacon_vectors)| Scanner::new(number, &beacon_vectors))
         .collect()
 }
 
@@ -163,38 +132,6 @@ fn main() {
     }
 
     let (x, y, z): (isize, isize, isize) = (1, 3, 2);
-    // let transformations: Vec<fn((isize, isize, isize)) -> (isize, isize, isize)> = vec![
-    //     // positive z
-    //     |(x, y, z)| (x, y, z),
-    //     |(x, y, z)| (y, -x, z),
-    //     |(x, y, z)| (-x, -y, z),
-    //     |(x, y, z)| (-y, x, z),
-    //     // negative z
-    //     |(x, y, z)| (-x, y, -z),
-    //     |(x, y, z)| (y, x, -z),
-    //     |(x, y, z)| (x, -y, -z),
-    //     |(x, y, z)| (-y, -x, -z),
-    //     // positive x
-    //     |(x, y, z)| (-z, y, x),
-    //     |(x, y, z)| (y, z, x),
-    //     |(x, y, z)| (z, -y, x),
-    //     |(x, y, z)| (-y, -z, x),
-    //     // negative x
-    //     |(x, y, z)| (-z, y, -x),
-    //     |(x, y, z)| (y, z, -x),
-    //     |(x, y, z)| (z, -y, -x),
-    //     |(x, y, z)| (-y, -z, -x),
-    //     // positive y
-    //     |(x, y, z)| (x, -z, y),
-    //     |(x, y, z)| (z, -x, y),
-    //     |(x, y, z)| (-x, z, y),
-    //     |(x, y, z)| (z, x, y),
-    //     // negative y
-    //     |(x, y, z)| (x, z, -y),
-    //     |(x, y, z)| (z, -x, -y),
-    //     |(x, y, z)| (-x, -z, -y),
-    //     |(x, y, z)| (-z, x, -y),
-    // ];
 
     for func in TRANSFORMATIONS {
         println!("transformation: {:?}", func((x, y, z)));
