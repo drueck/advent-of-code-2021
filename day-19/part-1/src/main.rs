@@ -24,6 +24,20 @@ struct Scanner {
     beacon_vectors: Vec<(isize, isize, isize)>,
 }
 
+impl Scanner {
+    fn relative_vectors(&self) -> HashSet<(isize, isize, isize)> {
+        self.beacon_vectors
+            .iter()
+            .combinations(2)
+            .map(|pair| {
+                let (ax, ay, az) = pair[0];
+                let (bx, by, bz) = pair[1];
+                (ax - bx, ay - by, az - bz)
+            })
+            .collect()
+    }
+}
+
 fn parse_input(filename: &str) -> Vec<Scanner> {
     fs::read_to_string(filename)
         .expect("error reading input file")
@@ -57,11 +71,22 @@ fn main() {
 
     let scanners = parse_input(&filename);
 
-    for scanner in scanners {
+    for scanner in &scanners {
         println!(
-            "scanner: {}, beacons: {}",
+            "scanner: {}, beacons: {}, relative vectors length: {}",
             scanner.number,
-            scanner.beacon_vectors.len()
+            scanner.beacon_vectors.len(),
+            scanner.relative_vectors().len(),
+        );
+    }
+
+    for pair in scanners.windows(2) {
+        let a_relative_vectors = pair[0].relative_vectors();
+        let b_relative_vectors = pair[1].relative_vectors();
+        let intersection = a_relative_vectors.intersection(&b_relative_vectors);
+        println!(
+            "number of common beacons without rotation: {}",
+            intersection.count()
         );
     }
 }
