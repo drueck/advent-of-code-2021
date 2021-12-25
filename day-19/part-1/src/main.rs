@@ -45,6 +45,7 @@ const TRANSFORMATIONS: [TransformFunction; 24] = [
 struct Scanner {
     number: usize,
     beacon_vectors: HashSet<(isize, isize, isize)>,
+    position: Option<(isize, isize, isize)>,
 }
 
 struct ScannerOrientations<'a> {
@@ -88,6 +89,7 @@ impl Scanner {
         Scanner {
             number,
             beacon_vectors: beacon_vectors.clone(),
+            position: None,
         }
     }
 
@@ -106,28 +108,31 @@ impl Scanner {
             .collect()
     }
 
-    fn common_beacons(&self, other: &Scanner) -> Option<HashSet<(isize, isize, isize)>> {
-        for a in self.orientations() {
-            for b in other.orientations() {
-                let a_bv = a.beacon_vectors.iter().next().unwrap();
-                for b_bv in &b.beacon_vectors {
-                    let (ax, ay, az) = a_bv;
-                    let (bx, by, bz) = b_bv;
+    fn identify_overlaping_scanner(&self, other: &Scanner) -> Option<Scanner> {
+        for other_orientation in other.orientations() {
+            for self_bv in &self.beacon_vectors {
+                for other_bv in &other_orientation.beacon_vectors {
+                    let (ax, ay, az) = self_bv;
+                    let (bx, by, bz) = other_bv;
                     let (dx, dy, dz) = (ax - bx, ay - by, az - bz);
 
-                    let translated_other = b.translated_beacon_vectors(&(dx, dy, dz));
+                    let translated_other =
+                        other_orientation.translated_beacon_vectors(&(dx, dy, dz));
 
-                    let intersection: HashSet<_> = a
+                    let intersection: HashSet<_> = self
                         .beacon_vectors
                         .intersection(&translated_other)
                         .cloned()
                         .collect();
 
                     if intersection.len() >= 12 {
-                        return Some(intersection);
+                        return Some(Scanner {
+                            number: other.number,
+                            beacon_vectors: translated_other,
+                            position: Some((dx, dy, dz)),
+                        });
                     }
                 }
-                // }
             }
         }
         None
@@ -157,23 +162,55 @@ fn parse_input(filename: &str) -> Vec<Scanner> {
         .collect()
 }
 
+fn identify_next_scanner(
+    identified_scanners: &mut Vec<Scanner>,
+    unidentified_scanners: &mut Vec<Scanner>,
+) {
+    for i in 0..identified_scanners.len() {
+        for u in 0..unidentified_scanners.len() {
+            if let Some(scanner) =
+                identified_scanners[i].identify_overlaping_scanner(&unidentified_scanners[u])
+            {
+                identified_scanners.push(scanner);
+                unidentified_scanners.swap_remove(u);
+                return;
+            }
+        }
+    }
+}
+
 fn main() {
     let filename = env::args()
         .nth(1)
         .expect("please specify the input filename");
 
-    let scanners = parse_input(&filename);
+    let mut unidentified_scanners = parse_input(&filename);
+    let mut identified_scanners: Vec<Scanner> = Vec::with_capacity(unidentified_scanners.len());
 
-    let scanner_0 = &scanners[0];
-    // let scanner_1 = &scanners[1];
-    let scanner_2 = &scanners[2];
-    // let scanner_4 = &scanners[4];
+    // we start with one identified and use its position as the origin
+    identified_scanners.push(Scanner {
+        number: unidentified_scanners[0].number,
+        beacon_vectors: unidentified_scanners[0].beacon_vectors.clone(),
+        position: Some((0, 0, 0)),
+    });
+    unidentified_scanners.swap_remove(0);
 
-    if let Some(intersection) = scanner_0.common_beacons(&scanner_2) {
-        println!(
-            "Found {} common beacons. They were: {:?}",
-            intersection.len(),
-            intersection
-        );
+    while !unidentified_scanners.is_empty() {
+        identify_next_scanner(&mut identified_scanners, &mut unidentified_scanners);
     }
+
+    let mut beacon_vectors = HashSet::new();
+
+    for scanner in identified_scanners {
+        println!(
+            "scanner {} is at position {:?}",
+            scanner.number,
+            scanner.position.unwrap()
+        );
+        for bv in scanner.beacon_vectors {
+            beacon_vectors.insert(bv);
+        }
+    }
+
+    println!("The total number of beacons is: {}", beacon_vectors.len());
 }
