@@ -25,20 +25,20 @@ const TRANSFORMATIONS: [TransformFunction; 24] = [
     &|(x, y, z)| (z, -y, x),
     &|(x, y, z)| (-y, -z, x),
     // negative x
-    &|(x, y, z)| (-z, y, -x),
-    &|(x, y, z)| (y, z, -x),
-    &|(x, y, z)| (z, -y, -x),
-    &|(x, y, z)| (-y, -z, -x),
+    &|(x, y, z)| (z, y, -x),
+    &|(x, y, z)| (y, -z, -x),
+    &|(x, y, z)| (-z, -y, -x),
+    &|(x, y, z)| (-y, z, -x),
     // positive y
     &|(x, y, z)| (x, -z, y),
-    &|(x, y, z)| (z, -x, y),
+    &|(x, y, z)| (-z, -x, y),
     &|(x, y, z)| (-x, z, y),
     &|(x, y, z)| (z, x, y),
     // negative y
-    &|(x, y, z)| (x, z, -y),
-    &|(x, y, z)| (z, -x, -y),
     &|(x, y, z)| (-x, -z, -y),
     &|(x, y, z)| (-z, x, -y),
+    &|(x, y, z)| (x, z, -y),
+    &|(x, y, z)| (z, -x, -y),
 ];
 
 #[derive(Debug)]
@@ -162,46 +162,96 @@ fn parse_input(filename: &str) -> Vec<Scanner> {
         .collect()
 }
 
-fn identify_next_scanner(
-    identified_scanners: &mut Vec<Scanner>,
-    unidentified_scanners: &mut Vec<Scanner>,
-) {
-    for i in 0..identified_scanners.len() {
-        for u in 0..unidentified_scanners.len() {
-            if let Some(scanner) =
-                identified_scanners[i].identify_overlaping_scanner(&unidentified_scanners[u])
-            {
-                identified_scanners.push(scanner);
-                unidentified_scanners.swap_remove(u);
-                return;
-            }
-        }
-    }
-}
+// fn identify_next_scanner(
+//     identified_scanners: &mut Vec<Scanner>,
+//     unidentified_scanners: &mut Vec<Scanner>,
+// ) {
+//     for i in 0..identified_scanners.len() {
+//         for u in 0..unidentified_scanners.len() {
+//             if let Some(scanner) =
+//                 identified_scanners[i].identify_overlaping_scanner(&unidentified_scanners[u])
+//             {
+//                 identified_scanners.push(scanner);
+//                 unidentified_scanners.swap_remove(u);
+//                 return;
+//             }
+//         }
+//     }
+// }
 
 fn main() {
     let filename = env::args()
         .nth(1)
         .expect("please specify the input filename");
 
-    let mut unidentified_scanners = parse_input(&filename);
-    let mut identified_scanners: Vec<Scanner> = Vec::with_capacity(unidentified_scanners.len());
+    let mut scanners = parse_input(&filename);
+    let mut unidentified_scanners: HashSet<usize> = HashSet::new();
+    let mut identified_scanners: HashSet<usize> = HashSet::new();
+    let mut scanners_to_check: Vec<usize> = vec![];
 
-    // we start with one identified and use its position as the origin
-    identified_scanners.push(Scanner {
-        number: unidentified_scanners[0].number,
-        beacon_vectors: unidentified_scanners[0].beacon_vectors.clone(),
-        position: Some((0, 0, 0)),
-    });
-    unidentified_scanners.swap_remove(0);
+    scanners[0].position = Some((0, 0, 0));
+
+    identified_scanners.insert(0);
+    scanners_to_check.push(0);
+
+    for i in 1..scanners.len() {
+        unidentified_scanners.insert(i);
+    }
 
     while !unidentified_scanners.is_empty() {
-        identify_next_scanner(&mut identified_scanners, &mut unidentified_scanners);
+        if let Some(base) = scanners_to_check.pop() {
+            for i in unidentified_scanners.iter() {
+                if let Some(identified_scanner) =
+                    scanners[base].identify_overlaping_scanner(&scanners[*i])
+                {
+                    scanners[*i] = identified_scanner;
+                    identified_scanners.insert(*i);
+                    scanners_to_check.push(*i);
+                    println!("identified scanner {}", i);
+                }
+            }
+        } else {
+            panic!("programming error");
+        }
+        unidentified_scanners = unidentified_scanners
+            .difference(&identified_scanners)
+            .cloned()
+            .collect();
+
+        println!("identified_scanners: {:?}", identified_scanners);
+        println!("unidentified_scanners: {:?}", unidentified_scanners);
+        println!("scanners to check {:?}", scanners_to_check);
     }
+
+    // we start with one identified and use its position as the origin
+    // identified_scanners.push(Scanner {
+    //     number: unidentified_scanners[0].number,
+    //     beacon_vectors: unidentified_scanners[0].beacon_vectors.clone(),
+    //     position: Some((0, 0, 0)),
+    // });
+    // new_identified_scanners.push(Scanner {
+    //     number: unidentified_scanners[0].number,
+    //     beacon_vectors: unidentified_scanners[0].beacon_vectors.clone(),
+    //     position: Some((0, 0, 0)),
+    // });
+    // unidentified_scanners.swap_remove(0);
+
+    // while !unidentified_scanners.is_empty() {
+    //     if let Some(identified_scanner) = new_identified_scanners.pop() {
+    //         for i in 0..unidentified_scanners.len() {
+    //             if let Some(scanner) =
+    //                 identified_scanner.identify_overlaping_scanner(&unidentified_scanners[i])
+    //             {
+    //                 identified_scanners.push(scanner.clone());
+    //                 new_identified_scanners.push(scanner.clone());
+    //             }
+    //         }
+    //     }
+    // }
 
     let mut beacon_vectors = HashSet::new();
 
-    for scanner in identified_scanners {
+    for scanner in scanners {
         println!(
             "scanner {} is at position {:?}",
             scanner.number,
