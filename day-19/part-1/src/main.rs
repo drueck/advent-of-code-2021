@@ -110,7 +110,17 @@ impl Scanner {
 
     fn identify_overlaping_scanner(&self, other: &Scanner) -> Option<Scanner> {
         for other_orientation in other.orientations() {
-            for self_bv in &self.beacon_vectors {
+            // we want to try lining up a point in our beacons with each point
+            // in the other scanner's beacons and then see if at least 12 beacons line up
+            // we need to try enough to make sure we've tried at least one potentially overlapping
+            // beacon, thus the beacon_vectors.len() - 11
+            // for example, if our scanner had 15 beacons, we'd need to line up at most 4 of them
+            // to be sure we checked one of the potentially overlapping ones
+            for self_bv in self
+                .beacon_vectors
+                .iter()
+                .take(self.beacon_vectors.len() - 11)
+            {
                 for other_bv in &other_orientation.beacon_vectors {
                     let (ax, ay, az) = self_bv;
                     let (bx, by, bz) = other_bv;
