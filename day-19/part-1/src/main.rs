@@ -41,22 +41,10 @@ const TRANSFORMATIONS: [TransformFunction; 24] = [
     &|(x, y, z)| (-z, x, -y),
 ];
 
-// fn relative_vectors(beacons_from_scanner: &Vec<(i32, i32)>) -> HashSet<(i32, i32)> {
-//     let mut relative_vectors = HashSet::new();
-
-//     for pair in beacons_from_scanner.into_iter().combinations(2) {
-//         let (ax, ay) = pair[0];
-//         let (bx, by) = pair[1];
-//         relative_vectors.insert((ax - bx, ay - by));
-//     }
-
-//     relative_vectors
-// }
-
 #[derive(Debug)]
 struct Scanner {
     number: usize,
-    beacon_vectors: Vec<(isize, isize, isize)>,
+    beacon_vectors: HashSet<(isize, isize, isize)>,
 }
 
 struct ScannerOrientations<'a> {
@@ -82,7 +70,7 @@ impl Iterator for ScannerOrientations<'_> {
         }
 
         let transform = TRANSFORMATIONS[self.transformation_index];
-        let transformed_vectors: Vec<(isize, isize, isize)> = self
+        let transformed_vectors: HashSet<(isize, isize, isize)> = self
             .scanner
             .beacon_vectors
             .iter()
@@ -96,7 +84,7 @@ impl Iterator for ScannerOrientations<'_> {
 }
 
 impl Scanner {
-    fn new(number: usize, beacon_vectors: &Vec<(isize, isize, isize)>) -> Self {
+    fn new(number: usize, beacon_vectors: &HashSet<(isize, isize, isize)>) -> Self {
         Scanner {
             number,
             beacon_vectors: beacon_vectors.clone(),
@@ -107,16 +95,42 @@ impl Scanner {
         ScannerOrientations::new(&self)
     }
 
-    fn relative_vectors(&self) -> HashSet<(isize, isize, isize)> {
+    fn translated_beacon_vectors(
+        &self,
+        (dx, dy, dz): &(isize, isize, isize),
+    ) -> HashSet<(isize, isize, isize)> {
         self.beacon_vectors
+            .clone()
             .iter()
-            .combinations(2)
-            .map(|pair| {
-                let (ax, ay, az) = pair[0];
-                let (bx, by, bz) = pair[1];
-                (ax - bx, ay - by, az - bz)
-            })
+            .map(|(x, y, z)| (x + dx, y + dy, z + dz))
             .collect()
+    }
+
+    fn common_beacons(&self, other: &Scanner) -> Option<HashSet<(isize, isize, isize)>> {
+        for a in self.orientations() {
+            for b in other.orientations() {
+                let a_bv = a.beacon_vectors.iter().next().unwrap();
+                for b_bv in &b.beacon_vectors {
+                    let (ax, ay, az) = a_bv;
+                    let (bx, by, bz) = b_bv;
+                    let (dx, dy, dz) = (ax - bx, ay - by, az - bz);
+
+                    let translated_other = b.translated_beacon_vectors(&(dx, dy, dz));
+
+                    let intersection: HashSet<_> = a
+                        .beacon_vectors
+                        .intersection(&translated_other)
+                        .cloned()
+                        .collect();
+
+                    if intersection.len() >= 12 {
+                        return Some(intersection);
+                    }
+                }
+                // }
+            }
+        }
+        None
     }
 }
 
@@ -143,46 +157,6 @@ fn parse_input(filename: &str) -> Vec<Scanner> {
         .collect()
 }
 
-fn relative_vector(
-    beacon_a: &(isize, isize, isize),
-    beacon_b: &(isize, isize, isize),
-) -> (isize, isize, isize) {
-    let (ax, ay, az) = beacon_a;
-    let (bx, by, bz) = beacon_b;
-    (ax - bx, ay - by, az - bz)
-}
-
-fn intersecting_beacons(scanner_a: &Scanner, scanner_b: &Scanner) -> Option<usize> {
-    for sa_orientation in scanner_a.orientations() {
-        for sb_orientation in scanner_b.orientations() {
-            let mut matching_beacons = HashSet::new();
-
-            let sa_relative_vectors = sa_orientation.relative_vectors();
-            let sb_relative_vectors = sb_orientation.relative_vectors();
-            if sa_relative_vectors.is_disjoint(&sb_relative_vectors) {
-                continue;
-            }
-
-            for sa_combo in sa_orientation.beacon_vectors.iter().combinations(2) {
-                for sb_combo in sb_orientation.beacon_vectors.iter().combinations(2) {
-                    let rv_a = relative_vector(sa_combo[0], sa_combo[1]);
-                    let rv_b = relative_vector(sb_combo[0], sb_combo[1]);
-
-                    if rv_a == rv_b {
-                        matching_beacons.insert(*sa_combo[0]);
-                        matching_beacons.insert(*sa_combo[1]);
-                    }
-                }
-            }
-            let count = matching_beacons.len();
-            if count >= 12 {
-                return Some(count);
-            }
-        }
-    }
-    None
-}
-
 fn main() {
     let filename = env::args()
         .nth(1)
@@ -191,22 +165,15 @@ fn main() {
     let scanners = parse_input(&filename);
 
     let scanner_0 = &scanners[0];
-    let scanner_1 = &scanners[1];
+    // let scanner_1 = &scanners[1];
+    let scanner_2 = &scanners[2];
     // let scanner_4 = &scanners[4];
 
-    if let Some(count) = intersecting_beacons(&scanner_0, &scanner_1) {
+    if let Some(intersection) = scanner_0.common_beacons(&scanner_2) {
         println!(
-            "Found {} intersecting beacons between these two scanners",
-            count
+            "Found {} common beacons. They were: {:?}",
+            intersection.len(),
+            intersection
         );
-    } else {
-        println!("There was no intersection found between these two scanners");
     }
-
-    let combos_of_twelve = (1..=12).combinations(2).count();
-
-    println!(
-        "the number of unique combinations of twelve things are: {}",
-        combos_of_twelve
-    );
 }
