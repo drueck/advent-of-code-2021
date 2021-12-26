@@ -1,4 +1,4 @@
-// Advent of Code 2021: Day 19, Part 1
+// Advent of Code 2021: Day 19
 // https://adventofcode.com/2021/day/19
 // Usage `cargo run <input-file>
 
@@ -147,6 +147,13 @@ impl Scanner {
         }
         None
     }
+
+    fn manhattan_distance(&self, other: &Scanner) -> usize {
+        let (ax, ay, az) = self.position.expect("missing position!");
+        let (bx, by, bz) = other.position.expect("missing position!");
+
+        ((ax - bx).abs() + (ay - by).abs() + (az - bz).abs()) as usize
+    }
 }
 
 fn parse_input(filename: &str) -> Vec<Scanner> {
@@ -172,23 +179,6 @@ fn parse_input(filename: &str) -> Vec<Scanner> {
         .collect()
 }
 
-// fn identify_next_scanner(
-//     identified_scanners: &mut Vec<Scanner>,
-//     unidentified_scanners: &mut Vec<Scanner>,
-// ) {
-//     for i in 0..identified_scanners.len() {
-//         for u in 0..unidentified_scanners.len() {
-//             if let Some(scanner) =
-//                 identified_scanners[i].identify_overlaping_scanner(&unidentified_scanners[u])
-//             {
-//                 identified_scanners.push(scanner);
-//                 unidentified_scanners.swap_remove(u);
-//                 return;
-//             }
-//         }
-//     }
-// }
-
 fn main() {
     let filename = env::args()
         .nth(1)
@@ -210,6 +200,7 @@ fn main() {
 
     while !unidentified_scanners.is_empty() {
         if let Some(base) = scanners_to_check.pop() {
+            println!("checking for overlaps with scanner {}", base);
             for i in unidentified_scanners.iter() {
                 if let Some(identified_scanner) =
                     scanners[base].identify_overlaping_scanner(&scanners[*i])
@@ -230,47 +221,32 @@ fn main() {
 
         println!("identified_scanners: {:?}", identified_scanners);
         println!("unidentified_scanners: {:?}", unidentified_scanners);
-        println!("scanners to check {:?}", scanners_to_check);
+        println!("scanners to check {:?}\n", scanners_to_check);
     }
-
-    // we start with one identified and use its position as the origin
-    // identified_scanners.push(Scanner {
-    //     number: unidentified_scanners[0].number,
-    //     beacon_vectors: unidentified_scanners[0].beacon_vectors.clone(),
-    //     position: Some((0, 0, 0)),
-    // });
-    // new_identified_scanners.push(Scanner {
-    //     number: unidentified_scanners[0].number,
-    //     beacon_vectors: unidentified_scanners[0].beacon_vectors.clone(),
-    //     position: Some((0, 0, 0)),
-    // });
-    // unidentified_scanners.swap_remove(0);
-
-    // while !unidentified_scanners.is_empty() {
-    //     if let Some(identified_scanner) = new_identified_scanners.pop() {
-    //         for i in 0..unidentified_scanners.len() {
-    //             if let Some(scanner) =
-    //                 identified_scanner.identify_overlaping_scanner(&unidentified_scanners[i])
-    //             {
-    //                 identified_scanners.push(scanner.clone());
-    //                 new_identified_scanners.push(scanner.clone());
-    //             }
-    //         }
-    //     }
-    // }
 
     let mut beacon_vectors = HashSet::new();
 
-    for scanner in scanners {
+    for scanner in &scanners {
         println!(
             "scanner {} is at position {:?}",
             scanner.number,
             scanner.position.unwrap()
         );
-        for bv in scanner.beacon_vectors {
+        for bv in &scanner.beacon_vectors {
             beacon_vectors.insert(bv);
         }
     }
 
-    println!("The total number of beacons is: {}", beacon_vectors.len());
+    let max_distance = &scanners
+        .iter()
+        .combinations(2)
+        .map(|pair| pair[0].manhattan_distance(&pair[1]))
+        .max()
+        .unwrap();
+
+    println!("\nThe total number of beacons is: {}", beacon_vectors.len());
+    println!(
+        "The max manhattan distance between beacons is: {}",
+        max_distance
+    );
 }
