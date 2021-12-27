@@ -121,7 +121,11 @@ impl Scanner {
                 .iter()
                 .take(self.beacon_vectors.len() - 11)
             {
-                for other_bv in &other_orientation.beacon_vectors {
+                for other_bv in other_orientation
+                    .beacon_vectors
+                    .iter()
+                    .take(other.beacon_vectors.len() - 11)
+                {
                     let (ax, ay, az) = self_bv;
                     let (bx, by, bz) = other_bv;
                     let (dx, dy, dz) = (ax - bx, ay - by, az - bz);
