@@ -1,0 +1,297 @@
+
+#..#.
+#....
+##..#
+..#..
+..###
+
+
+
+
+binary_string: 000000001
+integer value: 1
+binary_string: 000001001
+integer value: 9
+binary_string: 001001001
+integer value: 73
+binary_string: 001001000
+integer value: 72
+binary_string: 001000000
+integer value: 64
+binary_string: 000000000
+integer value: 0
+binary_string: 000000000
+integer value: 0
+binary_string: 000000010
+integer value: 2
+binary_string: 000010010
+integer value: 18
+binary_string: 010010011
+integer value: 147
+binary_string: 010011000
+integer value: 152
+binary_string: 011000000
+integer value: 192
+binary_string: 000000000
+integer value: 0
+binary_string: 000000000
+integer value: 0
+binary_string: 000000100
+integer value: 4
+binary_string: 000100100
+integer value: 36
+binary_string: 100100110
+integer value: 294
+binary_string: 100110001
+integer value: 305
+binary_string: 110001001
+integer value: 393
+binary_string: 001001000
+integer value: 72
+binary_string: 001000000
+integer value: 64
+binary_string: 000000001
+integer value: 1
+binary_string: 000001000
+integer value: 8
+binary_string: 001000100
+integer value: 68
+binary_string: 000100010
+integer value: 34
+binary_string: 100010011
+integer value: 275
+binary_string: 010011000
+integer value: 152
+binary_string: 011000000
+integer value: 192
+binary_string: 000000010
+integer value: 2
+binary_string: 000010000
+integer value: 16
+binary_string: 010000001
+integer value: 129
+binary_string: 000001100
+integer value: 12
+binary_string: 001100111
+integer value: 103
+binary_string: 100111000
+integer value: 312
+binary_string: 111000000
+integer value: 448
+binary_string: 000000100
+integer value: 4
+binary_string: 000100000
+integer value: 32
+binary_string: 100000010
+integer value: 258
+binary_string: 000010000
+integer value: 16
+binary_string: 010000110
+integer value: 134
+binary_string: 000110000
+integer value: 48
+binary_string: 110000000
+integer value: 384
+binary_string: 000000000
+integer value: 0
+binary_string: 000000000
+integer value: 0
+binary_string: 000000100
+integer value: 4
+binary_string: 000100000
+integer value: 32
+binary_string: 100000100
+integer value: 260
+binary_string: 000100000
+integer value: 32
+binary_string: 100000000
+integer value: 256
+after first enhance: 
+.###...
+#.###..
+#..#.#.
+.######
+#...#.#
+###.#..
+..#####
+
+
+
+
+binary_string: 000000000
+integer value: 0
+binary_string: 000000001
+integer value: 1
+binary_string: 000001001
+integer value: 9
+binary_string: 001001000
+integer value: 72
+binary_string: 001000001
+integer value: 65
+binary_string: 000001001
+integer value: 9
+binary_string: 001001000
+integer value: 72
+binary_string: 001000000
+integer value: 64
+binary_string: 000000000
+integer value: 0
+binary_string: 000000001
+integer value: 1
+binary_string: 000001010
+integer value: 10
+binary_string: 001010010
+integer value: 82
+binary_string: 010010001
+integer value: 145
+binary_string: 010001010
+integer value: 138
+binary_string: 001010011
+integer value: 83
+binary_string: 010011000
+integer value: 152
+binary_string: 011000000
+integer value: 192
+binary_string: 000000000
+integer value: 0
+binary_string: 000000011
+integer value: 3
+binary_string: 000011101
+integer value: 29
+binary_string: 011101100
+integer value: 236
+binary_string: 101100011
+integer value: 355
+binary_string: 100011100
+integer value: 284
+binary_string: 011100111
+integer value: 231
+binary_string: 100111001
+integer value: 313
+binary_string: 111001000
+integer value: 456
+binary_string: 001000000
+integer value: 64
+binary_string: 000000111
+integer value: 7
+binary_string: 000111011
+integer value: 59
+binary_string: 111011001
+integer value: 473
+binary_string: 011001111
+integer value: 207
+binary_string: 001111000
+integer value: 120
+binary_string: 111000110
+integer value: 454
+binary_string: 000110011
+integer value: 51
+binary_string: 110011000
+integer value: 408
+binary_string: 011000000
+integer value: 192
+binary_string: 000000110
+integer value: 6
+binary_string: 000110111
+integer value: 55
+binary_string: 110111010
+integer value: 442
+binary_string: 111010111
+integer value: 471
+binary_string: 010111001
+integer value: 185
+binary_string: 111001101
+integer value: 461
+binary_string: 001101111
+integer value: 111
+binary_string: 101111000
+integer value: 376
+binary_string: 111000000
+integer value: 448
+binary_string: 000000100
+integer value: 4
+binary_string: 000100110
+integer value: 38
+binary_string: 100110101
+integer value: 309
+binary_string: 110101111
+integer value: 431
+binary_string: 101111010
+integer value: 378
+binary_string: 111010010
+integer value: 466
+binary_string: 010010111
+integer value: 151
+binary_string: 010111000
+integer value: 184
+binary_string: 111000000
+integer value: 448
+binary_string: 000000000
+integer value: 0
+binary_string: 000000100
+integer value: 4
+binary_string: 000100010
+integer value: 34
+binary_string: 100010111
+integer value: 279
+binary_string: 010111101
+integer value: 189
+binary_string: 111101100
+integer value: 492
+binary_string: 101100111
+integer value: 359
+binary_string: 100111000
+integer value: 312
+binary_string: 111000000
+integer value: 448
+binary_string: 000000000
+integer value: 0
+binary_string: 000000000
+integer value: 0
+binary_string: 000000100
+integer value: 4
+binary_string: 000100110
+integer value: 38
+binary_string: 100110010
+integer value: 306
+binary_string: 110010000
+integer value: 400
+binary_string: 010000110
+integer value: 134
+binary_string: 000110000
+integer value: 48
+binary_string: 110000000
+integer value: 384
+binary_string: 000000000
+integer value: 0
+binary_string: 000000000
+integer value: 0
+binary_string: 000000000
+integer value: 0
+binary_string: 000000100
+integer value: 4
+binary_string: 000100100
+integer value: 36
+binary_string: 100100000
+integer value: 288
+binary_string: 100000100
+integer value: 260
+binary_string: 000100000
+integer value: 32
+binary_string: 100000000
+integer value: 256
+after second enhance: 
+..#####..
+.###..##.
+...###...
+#.#####.#
+....##.##
+#..#..###
+.###..#.#
+..#.#.#..
+...#.####
+
+
+
+
+Total number of lit pixels are: 42
