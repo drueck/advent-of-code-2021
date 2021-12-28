@@ -1,6 +1,6 @@
 // Advent of Code 2021: Day 20
 // https://adventofcode.com/2021/day/20
-// Usage `cargo run <input-file>
+// Usage `cargo run <input-file> <steps>
 
 use std::{collections::HashSet, env, fmt, fs};
 
@@ -121,6 +121,11 @@ impl fmt::Display for InfiniteImage {
 
 fn main() {
     let input_file = env::args().nth(1).expect("please supply an input file");
+    let steps: usize = env::args()
+        .nth(2)
+        .expect("please supply the number of enhance steps")
+        .parse()
+        .expect("steps must be a positive integer");
     let input = fs::read_to_string(input_file).expect("failed to read input from given file");
     let input_parts: Vec<&str> = input.split("\n\n").collect();
 
@@ -133,7 +138,7 @@ fn main() {
 
     let mut image = InfiniteImage::new(&image_vec, &algorithm);
 
-    for _ in 0..2 {
+    for _ in 0..steps {
         image.enhance();
     }
 
