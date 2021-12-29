@@ -2,9 +2,9 @@
 // https://adventofcode.com/2021/day/21
 // Usage `cargo run <input-file>
 
-// Works, but takes over 5 minutes! :(  Unacceptably slow.
-// I'll try to come back to this with a fresh perspective later.
+// Added caching, but still pretty slow: 18+ seconds.
 
+use cached::proc_macro::cached;
 use std::{collections::HashMap, env, fs};
 
 // the first number is the total of 3 rolls of d3
@@ -13,7 +13,7 @@ use std::{collections::HashMap, env, fs};
 const ROLLS_MULTIPLIERS: [(usize, usize); 7] =
     [(3, 1), (4, 3), (5, 6), (6, 7), (7, 6), (8, 3), (9, 1)];
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 struct Player {
     number: usize,
     position: usize,
@@ -41,6 +41,7 @@ fn wrap_to_one(n: usize, max: usize) -> usize {
     ((n - 1) % max) + 1
 }
 
+#[cached]
 fn play(
     current_player: Player,
     previous_player: Player,
