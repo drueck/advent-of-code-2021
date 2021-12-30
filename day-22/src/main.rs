@@ -2,7 +2,9 @@
 // https://adventofcode.com/2021/day/22
 // Usage `cargo run <input-file>
 
-use day_22::Rect;
+use day_22::grid::Grid;
+use day_22::rect::Rect;
+
 // use std::{env, fs};
 
 fn main() {
@@ -22,17 +24,26 @@ fn main() {
     //    and break the negative box into the opposite set of boxes that didn't intersect
     //  - continue for each remaining negative sub-box and each remaining positive box
     //
+    //
+    let mut grid = Grid::new();
 
     let a = Rect::new((0, 2), (0, 2));
     let b = Rect::new((-1, 3), (1, 3));
+    let c = Rect::new((-1, 3), (-1, 1));
+    let d = Rect::new((-1, 3), (-1, 1));
+    let e = Rect::new((0, 1), (0, 1));
+    let f = Rect::new((-1, 3), (-1, 3));
 
-    let results = a.add(&b);
+    grid.add(a);
+    grid.add(b);
+    grid.add(c);
+    grid.add(d);
+    grid.add(e);
+    grid.add(f);
 
-    let area: usize = results.iter().map(|rect| rect.area()).sum();
+    println!("the total area is: {}", grid.area());
 
-    println!("the total area is: {}", area);
-
-    for rect in results {
+    for rect in grid.rects {
         println!("{}", rect);
     }
 }
