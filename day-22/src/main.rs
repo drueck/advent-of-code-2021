@@ -2,7 +2,7 @@
 // https://adventofcode.com/2021/day/22
 // Usage `cargo run <input-file>
 
-use day_22::cube_grid::CubeGrid;
+use day_22::cuboid_grid::CuboidGrid;
 use day_22::instruction::{Instruction, Operation};
 
 use std::{env, fs};
@@ -20,15 +20,15 @@ fn main() {
     let filename = env::args().nth(1).expect("please supply an input filename");
     let instructions = parse_input(&filename);
 
-    let mut grid = CubeGrid::new();
+    let mut grid = CuboidGrid::new();
 
     for instruction in instructions {
         match instruction.operation {
             Operation::On => {
-                grid.add(instruction.cube);
+                grid.add(instruction.cuboid);
             }
             Operation::Off => {
-                grid.subtract(instruction.cube);
+                grid.subtract(instruction.cuboid);
             }
         }
     }

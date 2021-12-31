@@ -125,7 +125,6 @@ mod tests {
         let rect_1 = Rect::new((0, 4), (0, 4));
         let rect_2 = Rect::new((1, 3), (1, 3));
 
-        // expecting this will fail now
         assert_eq!(rect_1.non_intersecting_subrects_of(&rect_2), vec![]);
     }
 

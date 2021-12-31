@@ -1,4 +1,4 @@
-use crate::cube::Cube;
+use crate::cuboid::Cuboid;
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -14,7 +14,7 @@ pub enum Operation {
 
 pub struct Instruction {
     pub operation: Operation,
-    pub cube: Cube,
+    pub cuboid: Cuboid,
 }
 
 impl Instruction {
@@ -33,8 +33,8 @@ impl Instruction {
         let min_z: isize = captures.get(6).unwrap().as_str().parse().unwrap();
         let max_z: isize = captures.get(7).unwrap().as_str().parse().unwrap();
 
-        let cube = Cube::new((min_x, max_x + 1), (min_y, max_y + 1), (min_z, max_z + 1));
+        let cuboid = Cuboid::new((min_x, max_x + 1), (min_y, max_y + 1), (min_z, max_z + 1));
 
-        Instruction { operation, cube }
+        Instruction { operation, cuboid }
     }
 }
