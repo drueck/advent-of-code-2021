@@ -1,5 +1,3 @@
-use std::fmt;
-
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Cube {
     pub min_x: isize,
@@ -126,18 +124,6 @@ impl Cube {
 
             results
         }
-    }
-}
-
-impl fmt::Display for Cube {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for _ in self.min_y..self.max_y {
-            for _ in self.min_x..self.max_x {
-                write!(f, "X")?;
-            }
-            write!(f, "\n")?;
-        }
-        Ok(())
     }
 }
 
