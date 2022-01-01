@@ -1,5 +1,4 @@
 use crate::cuboid::Cuboid;
-use itertools::Itertools;
 use std::collections::HashSet;
 
 pub struct CuboidGrid {
@@ -46,51 +45,26 @@ impl CuboidGrid {
         for cuboid in cuboids_to_add {
             assert!(self.cuboids.insert(cuboid));
         }
-
-        self.assert_no_overlapping_cuboids();
     }
 
     pub fn subtract(&mut self, cuboid_to_subtract: Cuboid) {
         self.cuboids
             .retain(|cuboid| !cuboid_to_subtract.contains(&cuboid));
 
-        let mut cuboids_to_subtract = HashSet::from([cuboid_to_subtract]);
-
         let mut cuboids_to_remove = HashSet::new();
         let mut subcuboids_to_add = CuboidGrid::new();
 
         for cuboid in &self.cuboids {
-            let mut new_cuboids_to_subtract = HashSet::new();
-
-            cuboids_to_subtract.retain(|cuboid_to_subtract| {
-                if cuboid_to_subtract.intersects(&cuboid) {
-                    cuboids_to_remove.insert(cuboid.clone());
-                    if cuboid_to_subtract != cuboid {
-                        for neg_cuboid in cuboid
-                            .clone()
-                            .non_intersecting_subcuboids_of(&cuboid_to_subtract)
-                        {
-                            assert!(new_cuboids_to_subtract.insert(neg_cuboid));
-                        }
-                        for pos_cuboid in cuboid_to_subtract
-                            .clone()
-                            .non_intersecting_subcuboids_of(&cuboid)
-                        {
-                            subcuboids_to_add.add(pos_cuboid);
-                        }
+            if cuboid_to_subtract.intersects(&cuboid) {
+                assert!(cuboids_to_remove.insert(cuboid.clone()));
+                if cuboid_to_subtract != *cuboid {
+                    for pos_cuboid in cuboid_to_subtract
+                        .clone()
+                        .non_intersecting_subcuboids_of(&cuboid)
+                    {
+                        subcuboids_to_add.add(pos_cuboid);
                     }
-                    false
-                } else {
-                    true
                 }
-            });
-
-            for neg_cuboid in &new_cuboids_to_subtract {
-                assert!(cuboids_to_subtract.insert(*neg_cuboid));
-            }
-
-            if cuboids_to_subtract.is_empty() {
-                break;
             }
         }
 
@@ -108,18 +82,10 @@ impl CuboidGrid {
         for cuboid in subcuboids_to_add.cuboids {
             assert!(self.cuboids.insert(cuboid));
         }
-
-        self.assert_no_overlapping_cuboids();
     }
 
     pub fn volume(&self) -> usize {
         self.cuboids.iter().map(|cuboid| cuboid.volume()).sum()
-    }
-
-    fn assert_no_overlapping_cuboids(&self) {
-        for pair in self.cuboids.iter().combinations(2) {
-            assert!(pair[0].does_not_intersect(pair[1]));
-        }
     }
 }
 
