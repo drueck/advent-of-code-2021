@@ -1,4 +1,5 @@
 use crate::cuboid::Cuboid;
+use itertools::Itertools;
 use std::collections::HashSet;
 
 pub struct CuboidGrid {
@@ -45,6 +46,8 @@ impl CuboidGrid {
         for cuboid in cuboids_to_add {
             assert!(self.cuboids.insert(cuboid));
         }
+
+        self.assert_no_overlapping_cuboids();
     }
 
     pub fn subtract(&mut self, cuboid_to_subtract: Cuboid) {
@@ -97,10 +100,18 @@ impl CuboidGrid {
         for cuboid in subcuboids_to_add {
             assert!(self.cuboids.insert(cuboid));
         }
+
+        self.assert_no_overlapping_cuboids();
     }
 
     pub fn volume(&self) -> usize {
         self.cuboids.iter().map(|cuboid| cuboid.volume()).sum()
+    }
+
+    fn assert_no_overlapping_cuboids(&self) {
+        for pair in self.cuboids.iter().combinations(2) {
+            assert!(pair[0].does_not_intersect(pair[1]));
+        }
     }
 }
 
