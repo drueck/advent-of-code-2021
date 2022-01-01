@@ -74,52 +74,42 @@ impl Cuboid {
 
             // slice right difference
             if other.max_x > self.max_x {
-                results.push(Self::new(
-                    (self.max_x, other.max_x),
-                    (other.min_y, other.max_y),
-                    (other.min_z, other.max_z),
-                ));
+                let mut right = other.clone();
+                right.min_x = self.max_x;
                 other.max_x = self.max_x;
+                results.push(right);
             }
 
             // slice left difference
             if other.min_x < self.min_x {
-                results.push(Self::new(
-                    (other.min_x, self.min_x),
-                    (other.min_y, other.max_y),
-                    (other.min_z, other.max_z),
-                ));
+                let mut left = other.clone();
+                left.max_x = self.min_x;
                 other.min_x = self.min_x;
+                results.push(left);
             }
 
             // slice top difference
             if other.max_y > self.max_y {
-                results.push(Self::new(
-                    (other.min_x, other.max_x),
-                    (self.max_y, other.max_y),
-                    (other.min_z, other.max_z),
-                ));
+                let mut top = other.clone();
+                top.min_y = self.max_y;
                 other.max_y = self.max_y;
+                results.push(top);
             }
 
             // slice bottom difference
             if other.min_y < self.min_y {
-                results.push(Self::new(
-                    (other.min_x, other.max_x),
-                    (other.min_y, self.min_y),
-                    (other.min_z, other.max_z),
-                ));
+                let mut bottom = other.clone();
+                bottom.max_y = self.min_y;
                 other.min_y = self.min_y;
+                results.push(bottom);
             }
 
             // slice front difference
             if other.max_z > self.max_z {
-                results.push(Self::new(
-                    (other.min_x, other.max_x),
-                    (other.min_y, other.max_y),
-                    (self.max_z, other.max_z),
-                ));
+                let mut front = other.clone();
+                front.min_z = self.max_z;
                 other.max_z = self.max_z;
+                results.push(front);
             }
 
             // slice back difference
