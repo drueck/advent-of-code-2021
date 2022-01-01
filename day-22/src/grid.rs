@@ -1,97 +1,78 @@
 use crate::rect::Rect;
+use std::collections::HashSet;
 
 pub struct Grid {
-    pub rects: Vec<Rect>,
+    pub rects: HashSet<Rect>,
 }
 
 impl Grid {
     pub fn new() -> Self {
-        Self { rects: Vec::new() }
+        Self {
+            rects: HashSet::new(),
+        }
     }
 
     pub fn add(&mut self, new_rect: Rect) {
         self.rects.retain(|rect| !new_rect.contains(&rect));
 
-        let mut rects_to_add = vec![new_rect];
+        let mut rects_to_add = HashSet::from([new_rect]);
 
-        for r in 0..self.rects.len() {
-            let rect = &self.rects[r];
-            let mut new_rects_to_add = vec![];
-            let mut remove_from_rects_to_add = vec![];
-            for i in 0..rects_to_add.len() {
-                let new_rect = &rects_to_add[i];
+        for rect in &self.rects {
+            let mut new_rects_to_add = HashSet::new();
+
+            rects_to_add.retain(|new_rect| {
                 if rect.contains(&new_rect) {
-                    remove_from_rects_to_add.push(i);
+                    false
                 } else if rect.intersects(&new_rect) {
                     let non_intersecting_subrects = rect.non_intersecting_subrects_of(&new_rect);
-                    remove_from_rects_to_add.push(i);
                     for sub_rect in non_intersecting_subrects {
-                        new_rects_to_add.push(sub_rect);
+                        new_rects_to_add.insert(sub_rect);
                     }
+                    false
+                } else {
+                    true
                 }
-            }
+            });
 
-            remove_from_rects_to_add.sort_by(|a, b| b.cmp(a));
-            for i in remove_from_rects_to_add {
-                rects_to_add.remove(i);
-            }
             for sub_rect in new_rects_to_add {
-                rects_to_add.push(sub_rect);
+                assert!(rects_to_add.insert(sub_rect));
             }
         }
 
         for rect in rects_to_add {
-            self.rects.push(rect);
+            assert!(self.rects.insert(rect));
         }
     }
 
     pub fn subtract(&mut self, rect_to_subtract: Rect) {
         self.rects.retain(|rect| !rect_to_subtract.contains(&rect));
 
-        let mut rects_to_subtract = vec![rect_to_subtract];
+        let mut rects_to_remove = HashSet::new();
+        let mut subrects_to_add = Grid::new();
 
-        let mut rects_to_remove = vec![];
-        let mut subrects_to_add = vec![];
-
-        for r in 0..self.rects.len() {
-            let rect = &self.rects[r];
-
-            let mut new_rects_to_subtract = vec![];
-            let mut remove_from_rects_to_subtract = vec![];
-
-            for i in 0..rects_to_subtract.len() {
-                let rect_to_subtract = &rects_to_subtract[i];
-
-                if rect_to_subtract.contains(&rect) {
-                    rects_to_remove.push(r);
-                } else if rect_to_subtract.intersects(&rect) {
-                    rects_to_remove.push(r);
-                    remove_from_rects_to_subtract.push(i);
-                    for neg_rect in rect.clone().non_intersecting_subrects_of(&rect_to_subtract) {
-                        new_rects_to_subtract.push(neg_rect);
-                    }
+        for rect in &self.rects {
+            if rect_to_subtract.intersects(&rect) {
+                assert!(rects_to_remove.insert(rect.clone()));
+                if rect_to_subtract != *rect {
                     for pos_rect in rect_to_subtract.clone().non_intersecting_subrects_of(&rect) {
-                        subrects_to_add.push(pos_rect);
+                        subrects_to_add.add(pos_rect);
                     }
                 }
             }
-
-            remove_from_rects_to_subtract.sort_by(|a, b| b.cmp(a));
-            for i in remove_from_rects_to_subtract {
-                rects_to_subtract.remove(i);
-            }
-            for neg_rect in new_rects_to_subtract {
-                rects_to_subtract.push(neg_rect);
-            }
         }
 
-        rects_to_remove.sort_by(|a, b| b.cmp(a));
-        for r in rects_to_remove {
-            self.rects.remove(r);
+        self.rects.retain(|rect| !rects_to_remove.contains(rect));
+
+        if subrects_to_add
+            .rects
+            .iter()
+            .any(|&rect| rect.intersects(&rect_to_subtract))
+        {
+            subrects_to_add.subtract(rect_to_subtract);
         }
 
-        for rect in subrects_to_add {
-            self.rects.push(rect);
+        for rect in subrects_to_add.rects {
+            self.rects.insert(rect);
         }
     }
 
