@@ -51,12 +51,10 @@ impl CuboidGrid {
         self.cuboids
             .retain(|cuboid| !cuboid_to_subtract.contains(&cuboid));
 
-        let mut cuboids_to_remove = HashSet::new();
         let mut subcuboids_to_add = CuboidGrid::new();
 
-        for cuboid in &self.cuboids {
+        self.cuboids.retain(|cuboid| {
             if cuboid_to_subtract.intersects(&cuboid) {
-                assert!(cuboids_to_remove.insert(cuboid.clone()));
                 if cuboid_to_subtract != *cuboid {
                     for pos_cuboid in cuboid_to_subtract
                         .clone()
@@ -65,11 +63,11 @@ impl CuboidGrid {
                         subcuboids_to_add.add(pos_cuboid);
                     }
                 }
+                false
+            } else {
+                true
             }
-        }
-
-        self.cuboids
-            .retain(|cuboid| !cuboids_to_remove.contains(cuboid));
+        });
 
         if subcuboids_to_add
             .cuboids
