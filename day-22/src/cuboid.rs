@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct Cuboid {
     pub min_x: isize,
@@ -6,6 +8,16 @@ pub struct Cuboid {
     pub max_y: isize,
     pub min_z: isize,
     pub max_z: isize,
+}
+
+impl fmt::Display for Cuboid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "({}, {}), ({}, {}), ({}, {})",
+            self.min_x, self.max_x, self.min_y, self.max_y, self.min_z, self.max_z
+        )
+    }
 }
 
 impl Cuboid {
