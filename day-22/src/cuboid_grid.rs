@@ -24,10 +24,8 @@ impl CuboidGrid {
                 if cuboid.contains(&new_cuboid) {
                     false
                 } else if cuboid.intersects(&new_cuboid) {
-                    let non_intersecting_subcuboids =
-                        cuboid.non_intersecting_subcuboids_of(&new_cuboid);
-                    for sub_cuboid in non_intersecting_subcuboids {
-                        new_cuboids_to_add.insert(sub_cuboid);
+                    for sub_cuboid in cuboid.non_intersecting_subcuboids_of(&new_cuboid) {
+                        assert!(new_cuboids_to_add.insert(sub_cuboid));
                     }
                     false
                 } else {
@@ -36,7 +34,7 @@ impl CuboidGrid {
             });
 
             for sub_cuboid in new_cuboids_to_add {
-                cuboids_to_add.insert(sub_cuboid);
+                assert!(cuboids_to_add.insert(sub_cuboid));
             }
 
             if cuboids_to_add.is_empty() {
@@ -45,7 +43,7 @@ impl CuboidGrid {
         }
 
         for cuboid in cuboids_to_add {
-            self.cuboids.insert(cuboid);
+            assert!(self.cuboids.insert(cuboid));
         }
     }
 
@@ -69,13 +67,13 @@ impl CuboidGrid {
                             .clone()
                             .non_intersecting_subcuboids_of(&cuboid_to_subtract)
                         {
-                            new_cuboids_to_subtract.insert(neg_cuboid);
+                            assert!(new_cuboids_to_subtract.insert(neg_cuboid));
                         }
                         for pos_cuboid in cuboid_to_subtract
                             .clone()
                             .non_intersecting_subcuboids_of(&cuboid)
                         {
-                            subcuboids_to_add.insert(pos_cuboid);
+                            assert!(subcuboids_to_add.insert(pos_cuboid));
                         }
                     }
                     false
@@ -85,7 +83,7 @@ impl CuboidGrid {
             });
 
             for neg_cuboid in &new_cuboids_to_subtract {
-                cuboids_to_subtract.insert(*neg_cuboid);
+                assert!(cuboids_to_subtract.insert(*neg_cuboid));
             }
 
             if cuboids_to_subtract.is_empty() {
@@ -97,7 +95,7 @@ impl CuboidGrid {
             .retain(|cuboid| !cuboids_to_remove.contains(cuboid));
 
         for cuboid in subcuboids_to_add {
-            self.add(cuboid);
+            assert!(self.cuboids.insert(cuboid));
         }
     }
 
