@@ -114,12 +114,10 @@ impl Cuboid {
 
             // slice back difference
             if other.min_z < self.min_z {
-                results.push(Self::new(
-                    (other.min_x, other.max_x),
-                    (other.min_y, other.max_y),
-                    (other.min_z, self.min_z),
-                ));
+                let mut back = other.clone();
+                back.max_z = self.min_z;
                 other.min_z = self.min_z;
+                results.push(back);
             }
 
             // all differences should've been sliced off if we did this correctly

@@ -33,5 +33,5 @@ fn main() {
         }
     }
 
-    println!("The number of lit cuboids is: {}", grid.volume());
+    println!("The total number of lit cuboids is: {}", grid.volume());
 }
