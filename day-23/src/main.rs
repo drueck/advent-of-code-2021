@@ -30,4 +30,41 @@
 // C => (7,0) or (7,1)
 // D => (9,0) or (9,1)
 
-fn main() {}
+use day_23::Burrow;
+use std::{collections::BinaryHeap, env, fs};
+
+fn main() {
+    let filename = env::args().nth(1).unwrap();
+    let input = fs::read_to_string(filename).unwrap();
+    let initial_burrow = Burrow::new(&input);
+    let mut priority_queue: BinaryHeap<Burrow> = BinaryHeap::new();
+    let mut min_energy = usize::MAX;
+
+    println!("{}", initial_burrow);
+
+    priority_queue.push(initial_burrow);
+
+    while let Some(burrow) = priority_queue.pop() {
+        // println!(
+        //     "states: {}, energy used for this state: {}",
+        //     priority_queue.len(),
+        //     burrow.energy_used
+        // );
+
+        if burrow.energy_used > min_energy {
+            break;
+        }
+
+        if burrow.organized() && burrow.energy_used < min_energy {
+            min_energy = burrow.energy_used;
+            continue;
+        }
+
+        for possible_move in &burrow.possible_moves() {
+            let new_burrow = burrow.apply(&possible_move);
+            priority_queue.push(new_burrow);
+        }
+    }
+
+    println!("The minimum energy used was {}", min_energy);
+}
