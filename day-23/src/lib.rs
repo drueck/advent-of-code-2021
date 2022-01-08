@@ -114,7 +114,7 @@ fn spaces_between(from: (usize, usize), to: (usize, usize)) -> Vec<(usize, usize
     spaces
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Move {
     from: (usize, usize),
     to: (usize, usize),
@@ -202,6 +202,19 @@ impl Burrow {
             map,
             energy_used: 0,
         }
+    }
+
+    pub fn next_moves(&self) -> Vec<Move> {
+        let possible_moves = self.possible_moves();
+
+        if let Some(move_to_room) = possible_moves
+            .iter()
+            .find(|possible_move| ROOMS.contains(&possible_move.to))
+        {
+            return vec![move_to_room.clone()];
+        }
+
+        possible_moves
     }
 
     pub fn possible_moves(&self) -> Vec<Move> {
@@ -425,6 +438,21 @@ mod test {
         let burrow = test_burrow();
         let possible_moves = burrow.possible_moves();
         assert_eq!(possible_moves.len(), 28);
+    }
+
+    #[test]
+    fn next_moves() {
+        let input = "
+            #############
+            #..........B#
+            ###B#C#.#D###
+              #A#D#C#B#
+              #########
+        ";
+
+        let burrow = Burrow::new(&input);
+
+        assert_eq!(burrow.next_moves(), vec![burrow.build_move((5, 2), (7, 2))])
     }
 
     #[test]
