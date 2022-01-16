@@ -65,7 +65,7 @@ impl Burrow {
         }
     }
 
-    fn room_for(&self, kind: &Kind) -> Vec<Position> {
+    fn room_for(&self, kind: &Kind) -> impl Iterator<Item = Position> + '_ {
         let x = match kind {
             &'A' => A_ROOM_COL,
             &'B' => B_ROOM_COL,
@@ -74,14 +74,13 @@ impl Burrow {
             _ => panic!("Invalid amphipod species"),
         };
 
-        (2..(self.height - 2)).map(|y| (x, y)).collect()
+        (2..(self.height - 2)).map(move |y| (x, y))
     }
 
     pub fn organized(&self) -> bool {
         KINDS.iter().all(|kind| {
             self.room_for(&kind)
-                .iter()
-                .all(|position| match self.map.get(position) {
+                .all(|position| match self.map.get(&position) {
                     Some(kind_in_space) => kind_in_space == kind,
                     None => false,
                 })
