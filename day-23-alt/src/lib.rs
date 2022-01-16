@@ -12,6 +12,11 @@ const HORIZONTAL_WITH_STEM: char = '╩';
 const BURROW_MAX_WIDTH: usize = 13;
 const BURROW_MIN_WIDTH: usize = 9;
 
+const A_ROOM_COL: usize = 3;
+const B_ROOM_COL: usize = 5;
+const C_ROOM_COL: usize = 7;
+const D_ROOM_COL: usize = 9;
+
 const KINDS: [char; 4] = ['A', 'B', 'C', 'D'];
 
 pub type Position = (usize, usize);
@@ -33,10 +38,9 @@ impl Burrow {
             .map(|line| {
                 let mut chars: Vec<char> = line.trim().chars().collect();
                 if chars.len() == BURROW_MIN_WIDTH {
-                    // re-pad the smaller rows with spaces on each side
                     for _ in 0..((BURROW_MAX_WIDTH - BURROW_MIN_WIDTH) / 2) {
                         chars.insert(0, ' ');
-                        chars.push(' ')
+                        chars.push(' ');
                     }
                 }
                 chars
@@ -59,6 +63,29 @@ impl Burrow {
             height,
             energy_used: 0,
         }
+    }
+
+    fn room_for(&self, kind: &Kind) -> Vec<Position> {
+        let x = match kind {
+            &'A' => A_ROOM_COL,
+            &'B' => B_ROOM_COL,
+            &'C' => C_ROOM_COL,
+            &'D' => D_ROOM_COL,
+            _ => panic!("Invalid amphipod species"),
+        };
+
+        (2..(self.height - 2)).map(|y| (x, y)).collect()
+    }
+
+    pub fn organized(&self) -> bool {
+        KINDS.iter().all(|kind| {
+            self.room_for(&kind)
+                .iter()
+                .all(|position| match self.map.get(position) {
+                    Some(kind_in_space) => kind_in_space == kind,
+                    None => false,
+                })
+        })
     }
 }
 
@@ -105,7 +132,7 @@ impl fmt::Display for Burrow {
 }
 
 #[test]
-fn new_part_one_burrow() {
+fn test_new_small_burrow() {
     let input = "
         #############
         #B....A.C.D.#
@@ -131,7 +158,7 @@ fn new_part_one_burrow() {
 }
 
 #[test]
-fn new_part_two_burrow() {
+fn test_new_large_burrow() {
     let input = "
         #############
         #B....A.C.D.#
@@ -164,4 +191,70 @@ fn new_part_two_burrow() {
     assert_eq!(burrow.map.len(), 16);
     assert_eq!(burrow.height, 7);
     assert_eq!(burrow.energy_used, 0);
+}
+
+#[test]
+fn test_organized_small_burrow() {
+    let in_wrong_rooms = "
+        #############
+        #...........#
+        ###B#C#A#D###
+          #A#D#C#B#
+          #########";
+    let burrow = Burrow::new(&in_wrong_rooms);
+    assert!(!burrow.organized());
+
+    let rooms_not_full = "
+        #############
+        #...A.......#
+        ###.#B#C#D###
+          #A#B#C#D#
+          #########";
+    let burrow = Burrow::new(&rooms_not_full);
+    assert!(!burrow.organized());
+
+    let organized = "
+        #############
+        #...........#
+        ###A#B#C#D###
+          #A#B#C#D#
+          #########";
+    let burrow = Burrow::new(&organized);
+    assert!(burrow.organized());
+}
+
+#[test]
+fn test_organized_large_burrow() {
+    let in_wrong_rooms = "
+        #############
+        #...........#
+        ###A#B#C#D###
+          #A#B#C#D#
+          #C#D#B#A#
+          #D#C#A#B#
+          ######### ";
+    let burrow = Burrow::new(&in_wrong_rooms);
+    assert!(!burrow.organized());
+
+    let rooms_not_full = "
+        #############
+        #..........D#
+        ###A#B#C#.###
+          #A#B#C#D#
+          #A#B#C#D#
+          #A#B#C#D#
+          #########";
+    let burrow = Burrow::new(&rooms_not_full);
+    assert!(!burrow.organized());
+
+    let organized = "
+        #############
+        #...........#
+        ###A#B#C#D###
+          #A#B#C#D#
+          #A#B#C#D#
+          #A#B#C#D#
+          #########";
+    let burrow = Burrow::new(&organized);
+    assert!(burrow.organized());
 }
