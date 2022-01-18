@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt;
 
@@ -62,6 +63,7 @@ impl Move {
     }
 }
 
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub struct Burrow {
     pub map: HashMap<Position, Kind>,
     pub height: usize,
@@ -238,9 +240,6 @@ impl Burrow {
         self.map.remove(&possible_move.from);
         self.map.insert(possible_move.to, possible_move.kind);
         self.energy_used += possible_move.cost;
-
-        println!("burrow after applying move: {:?}", possible_move);
-        println!("{}", self);
     }
 
     // move all amphipods that can move into their home rooms into them
@@ -336,6 +335,18 @@ impl fmt::Display for Burrow {
             write!(f, "\n")?;
         }
         Ok(())
+    }
+}
+
+impl Ord for Burrow {
+    fn cmp(&self, other: &Self) -> Ordering {
+        other.energy_used.cmp(&self.energy_used)
+    }
+}
+
+impl PartialOrd for Burrow {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(&other))
     }
 }
 
