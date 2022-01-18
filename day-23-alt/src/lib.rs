@@ -13,6 +13,15 @@ const BURROW_MAX_WIDTH: usize = 13;
 const BURROW_MIN_WIDTH: usize = 9;
 
 const HALLWAY_ROW: usize = 1;
+const HALLWAY_POSITIONS: [(usize, usize); 7] = [
+    (1, HALLWAY_ROW),
+    (2, HALLWAY_ROW),
+    (4, HALLWAY_ROW),
+    (6, HALLWAY_ROW),
+    (8, HALLWAY_ROW),
+    (10, HALLWAY_ROW),
+    (11, HALLWAY_ROW),
+];
 
 const A_ROOM_COL: usize = 3;
 const B_ROOM_COL: usize = 5;
@@ -96,6 +105,10 @@ impl Burrow {
         }
     }
 
+    pub fn state(&self) -> Vec<(Position, Kind)> {
+        self.map.clone().into_iter().collect()
+    }
+
     fn room_for(&self, kind: &Kind) -> Vec<Position> {
         let x = match kind {
             &'A' => A_ROOM_COL,
@@ -141,7 +154,6 @@ impl Burrow {
         open_spaces
     }
 
-    /// includes the target position but not the from position
     fn positions_between(&self, from: &Position, to: &Position) -> Vec<Position> {
         let mut spaces = vec![];
 
@@ -239,6 +251,50 @@ impl Burrow {
             self.apply(possible_move)
         }
     }
+
+    fn moveable_amphipods_in_rooms_positions(&self) -> Vec<Position> {
+        let mut positions = vec![];
+
+        for kind in KINDS {
+            let mut non_native_species_present = false;
+            let mut possible_position: Option<Position> = None;
+            for position in self.room_for(&kind).iter().rev() {
+                match self.map.get(position) {
+                    Some(kind_in_position) if kind_in_position != &kind => {
+                        non_native_species_present = true;
+                        possible_position = Some(position.clone())
+                    }
+                    Some(_) => {
+                        if non_native_species_present {
+                            possible_position = Some(position.clone())
+                        }
+                    }
+                    None => {
+                        break;
+                    }
+                }
+            }
+            if let Some(position) = possible_position {
+                positions.push(position);
+            }
+        }
+
+        positions
+    }
+
+    pub fn moves_into_hallway(&self) -> Vec<Move> {
+        let mut moves = vec![];
+
+        for from in self.moveable_amphipods_in_rooms_positions() {
+            for to in HALLWAY_POSITIONS {
+                if let Some(valid_move) = self.try_move(from, to) {
+                    moves.push(valid_move);
+                }
+            }
+        }
+
+        moves
+    }
 }
 
 impl fmt::Display for Burrow {
@@ -283,9 +339,13 @@ impl fmt::Display for Burrow {
     }
 }
 
-#[test]
-fn test_new_small_burrow() {
-    let input = "
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_small_burrow() {
+        let input = "
         #############
         #B....A.C.D.#
         ###.#C#.#.###
@@ -293,25 +353,25 @@ fn test_new_small_burrow() {
           #########
     ";
 
-    let burrow = Burrow::new(input);
+        let burrow = Burrow::new(input);
 
-    assert_eq!(burrow.map.get(&(1, 1)), Some(&'B'));
-    assert_eq!(burrow.map.get(&(6, 1)), Some(&'A'));
-    assert_eq!(burrow.map.get(&(8, 1)), Some(&'C'));
-    assert_eq!(burrow.map.get(&(10, 1)), Some(&'D'));
-    assert_eq!(burrow.map.get(&(5, 2)), Some(&'C'));
-    assert_eq!(burrow.map.get(&(3, 3)), Some(&'A'));
-    assert_eq!(burrow.map.get(&(5, 3)), Some(&'D'));
-    assert_eq!(burrow.map.get(&(9, 3)), Some(&'B'));
+        assert_eq!(burrow.map.get(&(1, 1)), Some(&'B'));
+        assert_eq!(burrow.map.get(&(6, 1)), Some(&'A'));
+        assert_eq!(burrow.map.get(&(8, 1)), Some(&'C'));
+        assert_eq!(burrow.map.get(&(10, 1)), Some(&'D'));
+        assert_eq!(burrow.map.get(&(5, 2)), Some(&'C'));
+        assert_eq!(burrow.map.get(&(3, 3)), Some(&'A'));
+        assert_eq!(burrow.map.get(&(5, 3)), Some(&'D'));
+        assert_eq!(burrow.map.get(&(9, 3)), Some(&'B'));
 
-    assert_eq!(burrow.map.len(), 8);
-    assert_eq!(burrow.height, 5);
-    assert_eq!(burrow.energy_used, 0);
-}
+        assert_eq!(burrow.map.len(), 8);
+        assert_eq!(burrow.height, 5);
+        assert_eq!(burrow.energy_used, 0);
+    }
 
-#[test]
-fn test_new_large_burrow() {
-    let input = "
+    #[test]
+    fn test_new_large_burrow() {
+        let input = "
         #############
         #B....A.C.D.#
         ###.#C#.#.###
@@ -321,63 +381,63 @@ fn test_new_large_burrow() {
           #########
     ";
 
-    let burrow = Burrow::new(input);
+        let burrow = Burrow::new(input);
 
-    assert_eq!(burrow.map.get(&(1, 1)), Some(&'B'));
-    assert_eq!(burrow.map.get(&(6, 1)), Some(&'A'));
-    assert_eq!(burrow.map.get(&(8, 1)), Some(&'C'));
-    assert_eq!(burrow.map.get(&(10, 1)), Some(&'D'));
-    assert_eq!(burrow.map.get(&(5, 2)), Some(&'C'));
-    assert_eq!(burrow.map.get(&(3, 3)), Some(&'A'));
-    assert_eq!(burrow.map.get(&(5, 3)), Some(&'D'));
-    assert_eq!(burrow.map.get(&(9, 3)), Some(&'B'));
-    assert_eq!(burrow.map.get(&(3, 4)), Some(&'C'));
-    assert_eq!(burrow.map.get(&(3, 5)), Some(&'B'));
-    assert_eq!(burrow.map.get(&(5, 4)), Some(&'D'));
-    assert_eq!(burrow.map.get(&(5, 5)), Some(&'C'));
-    assert_eq!(burrow.map.get(&(7, 4)), Some(&'D'));
-    assert_eq!(burrow.map.get(&(7, 5)), Some(&'A'));
-    assert_eq!(burrow.map.get(&(9, 4)), Some(&'A'));
-    assert_eq!(burrow.map.get(&(9, 5)), Some(&'B'));
+        assert_eq!(burrow.map.get(&(1, 1)), Some(&'B'));
+        assert_eq!(burrow.map.get(&(6, 1)), Some(&'A'));
+        assert_eq!(burrow.map.get(&(8, 1)), Some(&'C'));
+        assert_eq!(burrow.map.get(&(10, 1)), Some(&'D'));
+        assert_eq!(burrow.map.get(&(5, 2)), Some(&'C'));
+        assert_eq!(burrow.map.get(&(3, 3)), Some(&'A'));
+        assert_eq!(burrow.map.get(&(5, 3)), Some(&'D'));
+        assert_eq!(burrow.map.get(&(9, 3)), Some(&'B'));
+        assert_eq!(burrow.map.get(&(3, 4)), Some(&'C'));
+        assert_eq!(burrow.map.get(&(3, 5)), Some(&'B'));
+        assert_eq!(burrow.map.get(&(5, 4)), Some(&'D'));
+        assert_eq!(burrow.map.get(&(5, 5)), Some(&'C'));
+        assert_eq!(burrow.map.get(&(7, 4)), Some(&'D'));
+        assert_eq!(burrow.map.get(&(7, 5)), Some(&'A'));
+        assert_eq!(burrow.map.get(&(9, 4)), Some(&'A'));
+        assert_eq!(burrow.map.get(&(9, 5)), Some(&'B'));
 
-    assert_eq!(burrow.map.len(), 16);
-    assert_eq!(burrow.height, 7);
-    assert_eq!(burrow.energy_used, 0);
-}
+        assert_eq!(burrow.map.len(), 16);
+        assert_eq!(burrow.height, 7);
+        assert_eq!(burrow.energy_used, 0);
+    }
 
-#[test]
-fn test_organized_small_burrow() {
-    let in_wrong_rooms = "
+    #[test]
+    fn test_organized_small_burrow() {
+        let in_wrong_rooms = "
         #############
         #...........#
         ###B#C#A#D###
           #A#D#C#B#
           #########";
-    let burrow = Burrow::new(&in_wrong_rooms);
-    assert!(!burrow.organized());
+        let burrow = Burrow::new(&in_wrong_rooms);
+        assert!(!burrow.organized());
 
-    let rooms_not_full = "
+        let rooms_not_full = "
         #############
         #...A.......#
         ###.#B#C#D###
           #A#B#C#D#
           #########";
-    let burrow = Burrow::new(&rooms_not_full);
-    assert!(!burrow.organized());
+        let burrow = Burrow::new(&rooms_not_full);
+        assert!(!burrow.organized());
 
-    let organized = "
+        let organized = "
         #############
         #...........#
         ###A#B#C#D###
           #A#B#C#D#
           #########";
-    let burrow = Burrow::new(&organized);
-    assert!(burrow.organized());
-}
+        let burrow = Burrow::new(&organized);
+        assert!(burrow.organized());
+    }
 
-#[test]
-fn test_organized_large_burrow() {
-    let in_wrong_rooms = "
+    #[test]
+    fn test_organized_large_burrow() {
+        let in_wrong_rooms = "
         #############
         #...........#
         ###A#B#C#D###
@@ -385,10 +445,10 @@ fn test_organized_large_burrow() {
           #C#D#B#A#
           #D#C#A#B#
           ######### ";
-    let burrow = Burrow::new(&in_wrong_rooms);
-    assert!(!burrow.organized());
+        let burrow = Burrow::new(&in_wrong_rooms);
+        assert!(!burrow.organized());
 
-    let rooms_not_full = "
+        let rooms_not_full = "
         #############
         #..........D#
         ###A#B#C#.###
@@ -396,10 +456,10 @@ fn test_organized_large_burrow() {
           #A#B#C#D#
           #A#B#C#D#
           #########";
-    let burrow = Burrow::new(&rooms_not_full);
-    assert!(!burrow.organized());
+        let burrow = Burrow::new(&rooms_not_full);
+        assert!(!burrow.organized());
 
-    let organized = "
+        let organized = "
         #############
         #...........#
         ###A#B#C#D###
@@ -407,13 +467,13 @@ fn test_organized_large_burrow() {
           #A#B#C#D#
           #A#B#C#D#
           #########";
-    let burrow = Burrow::new(&organized);
-    assert!(burrow.organized());
-}
+        let burrow = Burrow::new(&organized);
+        assert!(burrow.organized());
+    }
 
-#[test]
-fn test_next_move_into_room_small_burrow() {
-    let input = "
+    #[test]
+    fn test_next_move_into_room_small_burrow() {
+        let input = "
         #############
         #B....A...D.#
         ###.#C#.#.###
@@ -421,17 +481,17 @@ fn test_next_move_into_room_small_burrow() {
           #########
     ";
 
-    let burrow = Burrow::new(input);
+        let burrow = Burrow::new(input);
 
-    assert_eq!(
-        burrow.next_move_into_room(),
-        Some(Move::new((6, 1), (3, 2), 'A', 4))
-    )
-}
+        assert_eq!(
+            burrow.next_move_into_room(),
+            Some(Move::new((6, 1), (3, 2), 'A', 4))
+        )
+    }
 
-#[test]
-fn test_apply_move() {
-    let input = "
+    #[test]
+    fn test_apply_move() {
+        let input = "
         #############
         #B....A...D.#
         ###.#C#.#.###
@@ -439,34 +499,66 @@ fn test_apply_move() {
           #########
     ";
 
-    let mut burrow = Burrow::new(input);
-    let move_a = burrow.try_move((6, 1), (3, 2)).unwrap();
-    let move_a_cost = move_a.cost;
-    burrow.apply(move_a);
+        let mut burrow = Burrow::new(input);
+        let move_a = burrow.try_move((6, 1), (3, 2)).unwrap();
+        let move_a_cost = move_a.cost;
+        burrow.apply(move_a);
 
-    assert_eq!(burrow.energy_used, move_a_cost);
-    assert_eq!(burrow.map.get(&(6, 1)), None);
-    assert_eq!(burrow.map.get(&(3, 2)), Some(&'A'));
-}
+        assert_eq!(burrow.energy_used, move_a_cost);
+        assert_eq!(burrow.map.get(&(6, 1)), None);
+        assert_eq!(burrow.map.get(&(3, 2)), Some(&'A'));
+    }
 
-#[test]
-fn test_move_into_rooms_small_burrow() {
-    let input = "
+    #[test]
+    fn test_move_into_rooms_small_burrow() {
+        let input = "
         #############
         #B....A...DC#
         ###.#C#.#.###
           #A#B#D#.#
           #########
     ";
-    let mut burrow = Burrow::new(input);
+        let mut burrow = Burrow::new(input);
 
-    burrow.move_into_rooms();
+        burrow.move_into_rooms();
 
-    // A:  4 *    1 =    4
-    // B:  5 *   10 =   50
-    // C: 10 *  100 = 1000
-    // D:  8 * 1000 = 8000
+        // A:  4 *    1 =    4
+        // B:  5 *   10 =   50
+        // C: 10 *  100 = 1000
+        // D:  8 * 1000 = 8000
 
-    assert!(burrow.organized());
-    assert_eq!(burrow.energy_used, 4 + 50 + 1000 + 8000);
+        assert!(burrow.organized());
+        assert_eq!(burrow.energy_used, 4 + 50 + 1000 + 8000);
+    }
+
+    #[test]
+    fn test_moveable_amphipods_in_rooms_positions() {
+        let input = "
+        #############
+        #B....B.....#
+        ###.#.#A#D###
+          #A#C#D#C#
+          #########
+    ";
+        let burrow = Burrow::new(input);
+
+        assert_eq!(
+            burrow.moveable_amphipods_in_rooms_positions(),
+            vec![(5, 3), (7, 2), (9, 2)]
+        );
+    }
+
+    #[test]
+    fn test_moves_into_hallway() {
+        let input = "
+        #############
+        #...........#
+        ###B#C#A#D###
+          #A#B#D#C#
+          #########
+    ";
+        let burrow = Burrow::new(input);
+
+        assert_eq!(burrow.moves_into_hallway().len(), 28);
+    }
 }
