@@ -2,128 +2,58 @@ use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fmt;
 
-const KINDS: [char; 4] = ['A', 'B', 'C', 'D'];
+const TOP_LEFT: char = '╔';
+const TOP_RIGHT: char = '╗';
+const BOTTOM_LEFT: char = '╚';
+const BOTTOM_RIGHT: char = '╝';
+const HORIZONTAL: char = '═';
+const VERTICAL: char = '║';
+const HORIZONTAL_WITH_STEM: char = '╩';
 
-const HALLWAY_ROW: usize = 3;
-// const HALLWAY_COLS: [usize; 7] = [1, 2, 4, 6, 8, 10, 11];
+const BURROW_MAX_WIDTH: usize = 13;
+const BURROW_MIN_WIDTH: usize = 9;
 
-// only includes possible places to land
-const HALLWAY: [(usize, usize); 7] = [(1, 3), (2, 3), (4, 3), (6, 3), (8, 3), (10, 3), (11, 3)];
-
-// const ROOM_ROWS: [usize; 2] = [1, 2];
-// const ROOM_COLUMNS: [usize; 4] = [3, 5, 7, 9];
-
-// A,A,B,B,C,C,D,D
-const ROOMS: [(usize, usize); 8] = [
-    (3, 1),
-    (3, 2),
-    (5, 1),
-    (5, 2),
-    (7, 1),
-    (7, 2),
-    (9, 1),
-    (9, 2),
+const HALLWAY_ROW: usize = 1;
+const HALLWAY_POSITIONS: [(usize, usize); 7] = [
+    (1, HALLWAY_ROW),
+    (2, HALLWAY_ROW),
+    (4, HALLWAY_ROW),
+    (6, HALLWAY_ROW),
+    (8, HALLWAY_ROW),
+    (10, HALLWAY_ROW),
+    (11, HALLWAY_ROW),
 ];
 
-// const ROOMS_SPACES: [Space; 8] = [
-//     Space { x: 3, y: 1 },
-//     Space { x: 3, y: 2 },
-//     Space { x: 5, y: 1 },
-//     Space { x: 5, y: 2 },
-//     Space { x: 7, y: 1 },
-//     Space { x: 7, y: 2 },
-//     Space { x: 9, y: 1 },
-//     Space { x: 9, y: 2 },
-// ];
+const A_ROOM_COL: usize = 3;
+const B_ROOM_COL: usize = 5;
+const C_ROOM_COL: usize = 7;
+const D_ROOM_COL: usize = 9;
 
-// struct Space {
-//     x: usize,
-//     y: usize,
-// }
+const KINDS: [char; 4] = ['A', 'B', 'C', 'D'];
 
-// impl Space {
-//     fn new(x: usize, y: usize) -> Space {
-//         Space { x, y }
-//     }
-// }
-
-fn room_for(kind: char) -> &'static [(usize, usize)] {
+fn energy_cost_for_kind(kind: &Kind) -> usize {
     match kind {
-        'A' => &ROOMS[0..2],
-        'B' => &ROOMS[2..4],
-        'C' => &ROOMS[4..6],
-        'D' => &ROOMS[6..8],
-        _ => panic!("invalid amphipod species!"),
+        &'A' => 1,
+        &'B' => 10,
+        &'C' => 100,
+        &'D' => 1000,
+        _ => panic!("invalid kind"),
     }
 }
 
-fn move_cost_for(kind: char) -> usize {
-    match kind {
-        'A' => 1,
-        'B' => 10,
-        'C' => 100,
-        'D' => 1000,
-        _ => panic!("invalid amphipod species!"),
-    }
-}
+pub type Position = (usize, usize);
+pub type Kind = char;
 
-// assumes valid potential moves
-fn spaces_between(from: (usize, usize), to: (usize, usize)) -> Vec<(usize, usize)> {
-    let mut spaces = vec![];
-    // if we're starting in the hallway... we want to move left or right first
-    if HALLWAY.contains(&from) {
-        // move across the hallway to the room column
-        if to.0 < from.0 {
-            for x in to.0..=(from.0 - 1) {
-                spaces.push((x, HALLWAY_ROW));
-            }
-        } else {
-            for x in (from.0 + 1)..=to.0 {
-                spaces.push((x, HALLWAY_ROW));
-            }
-        }
-        // move down into the room
-        for y in to.1..from.1 {
-            spaces.push((to.0, y));
-        }
-    } else {
-        // we might be moving to the hallway or to another room...
-        // but regardless we'll move up first then left or right
-        // first move to the hallway
-        for y in (from.1 + 1)..=HALLWAY_ROW {
-            spaces.push((from.0, y));
-        }
-        // now move left or right toward the destination
-        if to.0 < from.0 {
-            for x in to.0..=(from.0 - 1) {
-                spaces.push((x, HALLWAY_ROW));
-            }
-        } else {
-            for x in (from.0 + 1)..=to.0 {
-                spaces.push((x, HALLWAY_ROW));
-            }
-        }
-        // move down if we're moving to a room
-        if to.1 < HALLWAY_ROW {
-            for y in to.1..HALLWAY_ROW {
-                spaces.push((to.0, y));
-            }
-        }
-    }
-
-    spaces
-}
-
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct Move {
-    from: (usize, usize),
-    to: (usize, usize),
-    kind: char,
-    cost: usize,
+    pub from: Position,
+    pub to: Position,
+    pub kind: Kind,
+    pub cost: usize,
 }
 
 impl Move {
-    fn new(from: (usize, usize), to: (usize, usize), kind: char, cost: usize) -> Move {
+    pub fn new(from: Position, to: Position, kind: Kind, cost: usize) -> Move {
         Move {
             from,
             to,
@@ -133,40 +63,11 @@ impl Move {
     }
 }
 
-impl fmt::Display for Move {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "Move {} from ({}, {}) to ({}, {}). Cost: {}",
-            self.kind, self.from.0, self.from.1, self.to.0, self.to.1, self.cost
-        )
-    }
-}
-
-#[derive(Clone, Eq, PartialEq)]
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub struct Burrow {
-    pub map: HashMap<(usize, usize), char>,
+    pub map: HashMap<Position, Kind>,
+    pub height: usize,
     pub energy_used: usize,
-}
-
-impl fmt::Display for Burrow {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let height = self.map.len();
-        for row in 0..height {
-            for col in 0..13 {
-                write!(
-                    f,
-                    "{}",
-                    match self.map.get(&(col, height - row - 1)) {
-                        Some(c) => *c,
-                        None => ' ',
-                    }
-                )?;
-            }
-            write!(f, "\n")?;
-        }
-        Ok(())
-    }
 }
 
 impl Burrow {
@@ -178,19 +79,20 @@ impl Burrow {
             .lines()
             .map(|line| {
                 let mut chars: Vec<char> = line.trim().chars().collect();
-                if chars.len() == 9 {
-                    for _ in 0..2 {
+                if chars.len() == BURROW_MIN_WIDTH {
+                    for _ in 0..((BURROW_MAX_WIDTH - BURROW_MIN_WIDTH) / 2) {
                         chars.insert(0, ' ');
                         chars.push(' ');
                     }
                 }
                 chars
             })
-            .rev()
             .collect();
 
-        for row in 0..lines.len() {
-            for col in 0..13 {
+        let height = lines.len();
+
+        for row in 0..height {
+            for col in 0..BURROW_MAX_WIDTH {
                 let c = lines[row][col];
                 if KINDS.contains(&c) {
                     map.insert((col, row), c);
@@ -200,49 +102,190 @@ impl Burrow {
 
         Self {
             map,
+            height,
             energy_used: 0,
         }
     }
 
-    pub fn next_moves(&self) -> Vec<Move> {
-        let possible_moves = self.possible_moves();
-
-        if let Some(move_to_room) = possible_moves
-            .iter()
-            .find(|possible_move| ROOMS.contains(&possible_move.to))
-        {
-            return vec![move_to_room.clone()];
-        }
-
-        possible_moves
+    pub fn state(&self) -> Vec<(Position, Kind)> {
+        self.map.clone().into_iter().collect()
     }
 
-    pub fn possible_moves(&self) -> Vec<Move> {
+    fn room_for(&self, kind: &Kind) -> Vec<Position> {
+        let x = match kind {
+            &'A' => A_ROOM_COL,
+            &'B' => B_ROOM_COL,
+            &'C' => C_ROOM_COL,
+            &'D' => D_ROOM_COL,
+            _ => panic!("Invalid amphipod species"),
+        };
+
+        (2..(self.height - 1)).map(move |y| (x, y)).collect()
+    }
+
+    pub fn organized(&self) -> bool {
+        KINDS.iter().all(|kind| {
+            self.room_for(&kind)
+                .iter()
+                .all(|position| match self.map.get(&position) {
+                    Some(kind_in_space) => kind_in_space == kind,
+                    None => false,
+                })
+        })
+    }
+
+    fn open_spaces_in_rooms(&self) -> Vec<(Position, Kind)> {
+        let mut open_spaces = vec![];
+
+        for kind in KINDS {
+            for position in self.room_for(&kind).into_iter().rev() {
+                match self.map.get(&position) {
+                    Some(kind_in_position) => {
+                        if kind_in_position != &kind {
+                            break;
+                        }
+                    }
+                    None => {
+                        open_spaces.push((position, kind));
+                        break;
+                    }
+                }
+            }
+        }
+
+        open_spaces
+    }
+
+    fn positions_between(&self, from: &Position, to: &Position) -> Vec<Position> {
+        let mut spaces = vec![];
+
+        // move from a room to the hallway if needed
+        if from.1 > HALLWAY_ROW {
+            for y in HALLWAY_ROW..=(from.1 - 1) {
+                spaces.push((from.0, y));
+            }
+        }
+
+        // move left or right in the hallway
+        if to.0 < from.0 {
+            for x in to.0..=(from.0 - 1) {
+                spaces.push((x, HALLWAY_ROW));
+            }
+        } else {
+            for x in (from.0 + 1)..=to.0 {
+                spaces.push((x, HALLWAY_ROW));
+            }
+        }
+
+        // move from the hallway into a room if needed
+        if to.1 > HALLWAY_ROW {
+            for y in (HALLWAY_ROW + 1)..=to.1 {
+                spaces.push((to.0, y));
+            }
+        }
+
+        spaces
+    }
+
+    fn try_move(&self, from: Position, to: Position) -> Option<Move> {
+        let kind = self
+            .map
+            .get(&from)
+            .expect("no amphipod was found at the from location");
+        let positions = self.positions_between(&from, &to);
+
+        if positions
+            .iter()
+            .all(|position| self.map.get(position) == None)
+        {
+            return Some(Move::new(
+                from,
+                to,
+                *kind,
+                energy_cost_for_kind(&kind) * positions.len(),
+            ));
+        }
+
+        None
+    }
+
+    fn away_from_home_amphipod_positions(&self, kind: &Kind) -> Vec<Position> {
+        let room_for_kind = self.room_for(kind);
+
         self.map
             .iter()
-            .flat_map(|((x, y), _)| self.possible_moves_from(*x, *y))
+            .filter(|(_, kind_in_space)| *kind_in_space == kind)
+            .filter(|(position, _)| !room_for_kind.contains(&position))
+            .map(|(position, _)| position)
+            .cloned()
             .collect()
     }
 
-    pub fn possible_moves_from(&self, x: usize, y: usize) -> Vec<Move> {
-        let mut moves = vec![];
-
-        // check for blocked bottom amphipod as a special case optimization
-        if y == 1 && self.map.contains_key(&(x, 2)) {
-            return moves;
-        }
-
-        let from = (x, y);
-        let kind = self.map.get(&from).unwrap();
-
-        // always try moving to the home room for the kind
-        for to in room_for(*kind) {
-            if let Some(valid_move) = self.try_move(from, *to) {
-                moves.push(valid_move);
+    fn next_move_into_room(&self) -> Option<Move> {
+        for (to, kind) in self.open_spaces_in_rooms() {
+            for from in self.away_from_home_amphipod_positions(&kind) {
+                if let Some(move_to_home) = self.try_move(from, to) {
+                    return Some(move_to_home);
+                }
             }
         }
-        if ROOMS.contains(&from) {
-            for to in HALLWAY {
+
+        None
+    }
+
+    pub fn apply(&mut self, possible_move: Move) {
+        assert!(self.map.get(&possible_move.from) == Some(&possible_move.kind));
+        assert!(self.map.get(&possible_move.to) == None);
+
+        self.map.remove(&possible_move.from);
+        self.map.insert(possible_move.to, possible_move.kind);
+        self.energy_used += possible_move.cost;
+    }
+
+    // move all amphipods that can move into their home rooms into them
+    // until all possible moves into home rooms are exhausted
+    // the energy used should be updated accordingly
+    pub fn move_into_rooms(&mut self) {
+        while let Some(possible_move) = self.next_move_into_room() {
+            self.apply(possible_move)
+        }
+    }
+
+    fn moveable_amphipods_in_rooms_positions(&self) -> Vec<Position> {
+        let mut positions = vec![];
+
+        for kind in KINDS {
+            let mut non_native_species_present = false;
+            let mut possible_position: Option<Position> = None;
+            for position in self.room_for(&kind).iter().rev() {
+                match self.map.get(position) {
+                    Some(kind_in_position) if kind_in_position != &kind => {
+                        non_native_species_present = true;
+                        possible_position = Some(position.clone())
+                    }
+                    Some(_) => {
+                        if non_native_species_present {
+                            possible_position = Some(position.clone())
+                        }
+                    }
+                    None => {
+                        break;
+                    }
+                }
+            }
+            if let Some(position) = possible_position {
+                positions.push(position);
+            }
+        }
+
+        positions
+    }
+
+    pub fn moves_into_hallway(&self) -> Vec<Move> {
+        let mut moves = vec![];
+
+        for from in self.moveable_amphipods_in_rooms_positions() {
+            for to in HALLWAY_POSITIONS {
                 if let Some(valid_move) = self.try_move(from, to) {
                     moves.push(valid_move);
                 }
@@ -251,108 +294,47 @@ impl Burrow {
 
         moves
     }
+}
 
-    fn build_move(&self, from: (usize, usize), to: (usize, usize)) -> Move {
-        let kind = *self.map.get(&from).unwrap();
-        let spaces = spaces_between(from, to);
-        let cost = spaces.len() * move_cost_for(kind);
-        Move::new(from, to, kind, cost)
-    }
-
-    // if the move is possible (nothing is blocking) then return Some(move with cost)
-    // otherwise return None
-    fn try_move(&self, from: (usize, usize), to: (usize, usize)) -> Option<Move> {
-        let kind = *self.map.get(&from).unwrap();
-        let spaces = spaces_between(from, to);
-        let possible_move = self.build_move(from, to);
-
-        if self.kind_organized(kind) {
-            return None;
-        }
-
-        if ROOMS.contains(&from) {
-            // don't move out of your home room if you're on the bottom
-            if room_for(kind).contains(&from) && from.1 == 1 {
-                return None;
-            }
-
-            if HALLWAY.contains(&to) {
-                match spaces.iter().any(|space| self.map.contains_key(space)) {
-                    false => Some(possible_move),
-                    true => None,
-                }
-            } else if room_for(kind).contains(&to) {
-                // moves within rooms are not helpful and result in infinite loops
-                if from.0 == to.0 {
-                    return None;
-                }
-                // if the room has any foreign species, we cannot enter it
-                for space in room_for(kind) {
-                    if let Some(kind_in_space) = self.map.get(space) {
-                        if *kind_in_space != kind {
-                            return None;
+impl fmt::Display for Burrow {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for row in 0..self.height {
+            for col in 0..BURROW_MAX_WIDTH {
+                write!(
+                    f,
+                    "{}",
+                    if row == 0 && col == 0 || row == 2 && col == 10 {
+                        TOP_LEFT
+                    } else if row == 0 && col == BURROW_MAX_WIDTH - 1 || row == 2 && col == 2 {
+                        TOP_RIGHT
+                    } else if row == 2 && col == 0 || row == self.height - 1 && col == 2 {
+                        BOTTOM_LEFT
+                    } else if row == 2 && col == BURROW_MAX_WIDTH - 1
+                        || row == self.height - 1 && col == 10
+                    {
+                        BOTTOM_RIGHT
+                    } else if [4, 6, 8].contains(&col) && row == self.height - 1 {
+                        HORIZONTAL_WITH_STEM
+                    } else if (row == 0 || row == self.height - 1 && (col > 2 && col < 10))
+                        || (row == 2 && [1, 11].contains(&col))
+                    {
+                        HORIZONTAL
+                    } else if (row == 1 && [0, BURROW_MAX_WIDTH - 1].contains(&col))
+                        || (row > 2 && row < self.height - 1 && [2, 10].contains(&col))
+                        || ([4, 6, 8].contains(&col) && row > 1 && row < self.height - 1)
+                    {
+                        VERTICAL
+                    } else {
+                        match self.map.get(&(col, row)) {
+                            Some(c) => *c,
+                            None => ' ',
                         }
                     }
-                }
-
-                // don't move to the top room space if the bottom space is open
-                if to.1 == 2 && self.map.get(&(to.0, 1)) == None {
-                    return None;
-                }
-
-                match spaces.iter().any(|space| self.map.contains_key(space)) {
-                    false => Some(possible_move),
-                    true => None,
-                }
-            } else {
-                None
+                )?;
             }
-        } else if HALLWAY.contains(&from) {
-            if room_for(kind).contains(&to) {
-                // if the room has any foreign species, we cannot enter it
-                for space in room_for(kind) {
-                    if let Some(kind_in_space) = self.map.get(space) {
-                        if *kind_in_space != kind {
-                            return None;
-                        }
-                    }
-                }
-                // don't move to the top room space if the bottom space is open
-                if to.1 == 2 && self.map.get(&(to.0, 1)) == None {
-                    return None;
-                }
-                match spaces.iter().any(|space| self.map.contains_key(space)) {
-                    false => Some(possible_move),
-                    true => None,
-                }
-            } else {
-                // cannot move from hallway to anywhere but your home room
-                None
-            }
-        } else {
-            None
+            write!(f, "\n")?;
         }
-    }
-
-    pub fn apply(&self, m: &Move) -> Self {
-        let mut new_burrow = self.clone();
-        let kind = &new_burrow.map.remove(&m.from).unwrap();
-        assert!(*kind == m.kind);
-        assert!(self.map.get(&m.to) == None);
-
-        new_burrow.map.insert(m.to, m.kind);
-        new_burrow.energy_used += m.cost;
-        new_burrow
-    }
-
-    pub fn kind_organized(&self, kind: char) -> bool {
-        room_for(kind)
-            .iter()
-            .all(|space| self.map.get(space) == Some(&kind))
-    }
-
-    pub fn organized(&self) -> bool {
-        KINDS.iter().all(|kind| self.kind_organized(*kind))
+        Ok(())
     }
 }
 
@@ -364,237 +346,230 @@ impl Ord for Burrow {
 
 impl PartialOrd for Burrow {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
+        Some(self.cmp(&other))
     }
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use super::*;
-    // use std::collections::BinaryHeap;
-    use std::fs;
-
-    fn test_burrow() -> Burrow {
-        let input = fs::read_to_string("test-input.txt").unwrap();
-        Burrow::new(&input)
-    }
 
     #[test]
-    fn new_burrow() {
+    fn test_new_small_burrow() {
         let input = "
-            #############
-            #B....A.C.D.#
-            ###.#C#.#.###
-              #A#D#.#B#
-              #########
-        ";
+        #############
+        #B....A.C.D.#
+        ###.#C#.#.###
+          #A#D#.#B#
+          #########
+    ";
 
         let burrow = Burrow::new(input);
 
-        // hallway
-        assert_eq!(burrow.map.get(&(1, 3)), Some(&'B'));
-        assert_eq!(burrow.map.get(&(6, 3)), Some(&'A'));
-        assert_eq!(burrow.map.get(&(8, 3)), Some(&'C'));
-        assert_eq!(burrow.map.get(&(10, 3)), Some(&'D'));
-        // rooms
-        assert_eq!(burrow.map.get(&(3, 1)), Some(&'A'));
+        assert_eq!(burrow.map.get(&(1, 1)), Some(&'B'));
+        assert_eq!(burrow.map.get(&(6, 1)), Some(&'A'));
+        assert_eq!(burrow.map.get(&(8, 1)), Some(&'C'));
+        assert_eq!(burrow.map.get(&(10, 1)), Some(&'D'));
         assert_eq!(burrow.map.get(&(5, 2)), Some(&'C'));
-        assert_eq!(burrow.map.get(&(5, 1)), Some(&'D'));
-        assert_eq!(burrow.map.get(&(9, 1)), Some(&'B'));
+        assert_eq!(burrow.map.get(&(3, 3)), Some(&'A'));
+        assert_eq!(burrow.map.get(&(5, 3)), Some(&'D'));
+        assert_eq!(burrow.map.get(&(9, 3)), Some(&'B'));
 
         assert_eq!(burrow.map.len(), 8);
+        assert_eq!(burrow.height, 5);
+        assert_eq!(burrow.energy_used, 0);
     }
 
     #[test]
-    fn amphipods_trapped_below_others_cant_move() {
-        let burrow = test_burrow();
-
-        assert_eq!(burrow.possible_moves_from(3, 1), vec![]);
-        assert_eq!(burrow.possible_moves_from(5, 1), vec![]);
-        assert_eq!(burrow.possible_moves_from(7, 1), vec![]);
-        assert_eq!(burrow.possible_moves_from(9, 1), vec![]);
-    }
-
-    #[test]
-    fn unblocked_top_row_amphibods_possible_moves() {
-        let burrow = test_burrow();
-
-        assert_eq!(
-            burrow.possible_moves_from(3, 2),
-            vec![
-                burrow.build_move((3, 2), (1, 3)),
-                burrow.build_move((3, 2), (2, 3)),
-                burrow.build_move((3, 2), (4, 3)),
-                burrow.build_move((3, 2), (6, 3)),
-                burrow.build_move((3, 2), (8, 3)),
-                burrow.build_move((3, 2), (10, 3)),
-                burrow.build_move((3, 2), (11, 3)),
-            ]
-        );
-    }
-
-    #[test]
-    fn all_possible_starting_moves() {
-        let burrow = test_burrow();
-        let possible_moves = burrow.possible_moves();
-        assert_eq!(possible_moves.len(), 28);
-    }
-
-    #[test]
-    fn next_moves() {
+    fn test_new_large_burrow() {
         let input = "
-            #############
-            #..........B#
-            ###B#C#.#D###
-              #A#D#C#B#
-              #########
-        ";
-
-        let burrow = Burrow::new(&input);
-
-        assert_eq!(burrow.next_moves(), vec![burrow.build_move((5, 2), (7, 2))])
-    }
-
-    #[test]
-    fn no_moves_for_bottom_of_own_room() {
-        let input = "
-            #############
-            #B..........#
-            ###.#C#B#D###
-              #A#D#C#B#
-              #########
-        ";
-        let burrow = Burrow::new(input);
-
-        assert_eq!(burrow.possible_moves_from(3, 1), vec![])
-    }
-
-    #[test]
-    fn no_moves_for_top_of_own_room_if_organized() {
-        let input = "
-            #############
-            #...........#
-            ###A#C#B#D###
-              #A#D#C#B#
-              #########
-        ";
-        let burrow = Burrow::new(input);
-
-        assert_eq!(burrow.possible_moves_from(3, 2), vec![]);
-    }
-
-    #[test]
-    fn one_move_from_hallway_to_bottom_of_home_room() {
-        let input = "
-            #############
-            #..........A#
-            ###.#.#.#.###
-              #.#.#.#.#
-              #########
-        ";
-        let burrow = Burrow::new(input);
-
-        assert_eq!(
-            burrow.possible_moves_from(11, 3),
-            vec![burrow.build_move((11, 3), (3, 1))]
-        );
-    }
-
-    #[test]
-    fn move_from_hallway_to_top_of_home_room() {
-        let input = "
-            #############
-            #.....C.B...#
-            ###B#.#.#D###
-              #A#D#C#A#
-              #########
-        ";
+        #############
+        #B....A.C.D.#
+        ###.#C#.#.###
+          #A#D#.#B#
+          #C#D#D#A#
+          #B#C#A#B#
+          #########
+    ";
 
         let burrow = Burrow::new(input);
 
-        assert_eq!(
-            burrow.possible_moves_from(6, 3),
-            vec![burrow.build_move((6, 3), (7, 2))]
-        );
+        assert_eq!(burrow.map.get(&(1, 1)), Some(&'B'));
+        assert_eq!(burrow.map.get(&(6, 1)), Some(&'A'));
+        assert_eq!(burrow.map.get(&(8, 1)), Some(&'C'));
+        assert_eq!(burrow.map.get(&(10, 1)), Some(&'D'));
+        assert_eq!(burrow.map.get(&(5, 2)), Some(&'C'));
+        assert_eq!(burrow.map.get(&(3, 3)), Some(&'A'));
+        assert_eq!(burrow.map.get(&(5, 3)), Some(&'D'));
+        assert_eq!(burrow.map.get(&(9, 3)), Some(&'B'));
+        assert_eq!(burrow.map.get(&(3, 4)), Some(&'C'));
+        assert_eq!(burrow.map.get(&(3, 5)), Some(&'B'));
+        assert_eq!(burrow.map.get(&(5, 4)), Some(&'D'));
+        assert_eq!(burrow.map.get(&(5, 5)), Some(&'C'));
+        assert_eq!(burrow.map.get(&(7, 4)), Some(&'D'));
+        assert_eq!(burrow.map.get(&(7, 5)), Some(&'A'));
+        assert_eq!(burrow.map.get(&(9, 4)), Some(&'A'));
+        assert_eq!(burrow.map.get(&(9, 5)), Some(&'B'));
+
+        assert_eq!(burrow.map.len(), 16);
+        assert_eq!(burrow.height, 7);
+        assert_eq!(burrow.energy_used, 0);
     }
 
     #[test]
-    fn moves_into_hallway() {
-        let input = "
-            #############
-            #D......B...#
-            ###.#A#.#.###
-              #B#C#.#.#
-              #########
-        ";
-        let burrow = Burrow::new(input);
+    fn test_organized_small_burrow() {
+        let in_wrong_rooms = "
+        #############
+        #...........#
+        ###B#C#A#D###
+          #A#D#C#B#
+          #########";
+        let burrow = Burrow::new(&in_wrong_rooms);
+        assert!(!burrow.organized());
 
-        assert_eq!(
-            burrow.possible_moves_from(3, 1),
-            vec![
-                burrow.build_move((3, 1), (2, 3)),
-                burrow.build_move((3, 1), (4, 3)),
-                burrow.build_move((3, 1), (6, 3))
-            ]
-        );
-    }
-
-    #[test]
-    fn apply_move() {
-        let burrow = test_burrow();
-        let m = burrow.build_move((3, 2), (8, 3));
-
-        let new_burrow = burrow.apply(&m);
-
-        assert_eq!(new_burrow.energy_used, m.cost);
-        assert_eq!(new_burrow.map.contains_key(&m.from), false);
-        assert_eq!(new_burrow.map.contains_key(&m.to), true);
-        assert_eq!(new_burrow.map.get(&m.to), Some(&m.kind));
-    }
-
-    #[test]
-    fn organized() {
-        let initial_burrow = test_burrow();
-        assert!(!initial_burrow.organized());
+        let rooms_not_full = "
+        #############
+        #...A.......#
+        ###.#B#C#D###
+          #A#B#C#D#
+          #########";
+        let burrow = Burrow::new(&rooms_not_full);
+        assert!(!burrow.organized());
 
         let organized = "
-            #############
-            #...........#
-            ###A#B#C#D###
-              #A#B#C#D#
-              #########
-        ";
-        let organized_burrow = Burrow::new(organized);
-        assert!(organized_burrow.organized());
+        #############
+        #...........#
+        ###A#B#C#D###
+          #A#B#C#D#
+          #########";
+        let burrow = Burrow::new(&organized);
+        assert!(burrow.organized());
     }
 
-    // #[test]
-    // fn end_to_end_idea() {
-    //     let initial_burrow = test_burrow();
-    //     let mut priority_queue: BinaryHeap<Burrow> = BinaryHeap::new();
-    //     let mut min_energy = usize::MAX;
+    #[test]
+    fn test_organized_large_burrow() {
+        let in_wrong_rooms = "
+        #############
+        #...........#
+        ###A#B#C#D###
+          #A#B#C#D#
+          #C#D#B#A#
+          #D#C#A#B#
+          ######### ";
+        let burrow = Burrow::new(&in_wrong_rooms);
+        assert!(!burrow.organized());
 
-    //     // push the initial state
-    //     priority_queue.push(initial_burrow);
+        let rooms_not_full = "
+        #############
+        #..........D#
+        ###A#B#C#.###
+          #A#B#C#D#
+          #A#B#C#D#
+          #A#B#C#D#
+          #########";
+        let burrow = Burrow::new(&rooms_not_full);
+        assert!(!burrow.organized());
 
-    //     while let Some(burrow) = priority_queue.pop() {
-    //         if burrow.energy_used > min_energy {
-    //             break;
-    //         }
+        let organized = "
+        #############
+        #...........#
+        ###A#B#C#D###
+          #A#B#C#D#
+          #A#B#C#D#
+          #A#B#C#D#
+          #########";
+        let burrow = Burrow::new(&organized);
+        assert!(burrow.organized());
+    }
 
-    //         if burrow.organized() && burrow.energy_used < min_energy {
-    //             min_energy = burrow.energy_used;
-    //             continue;
-    //         }
+    #[test]
+    fn test_next_move_into_room_small_burrow() {
+        let input = "
+        #############
+        #B....A...D.#
+        ###.#C#.#.###
+          #A#B#D#C#
+          #########
+    ";
 
-    //         for possible_move in &burrow.possible_moves() {
-    //             let new_burrow = burrow.apply(&possible_move);
-    //             priority_queue.push(new_burrow);
-    //         }
-    //     }
+        let burrow = Burrow::new(input);
 
-    //     println!("The minimum energy used was {}", min_energy);
+        assert_eq!(
+            burrow.next_move_into_room(),
+            Some(Move::new((6, 1), (3, 2), 'A', 4))
+        )
+    }
 
-    //     assert_eq!(min_energy, 12521);
-    // }
+    #[test]
+    fn test_apply_move() {
+        let input = "
+        #############
+        #B....A...D.#
+        ###.#C#.#.###
+          #A#B#D#C#
+          #########
+    ";
+
+        let mut burrow = Burrow::new(input);
+        let move_a = burrow.try_move((6, 1), (3, 2)).unwrap();
+        let move_a_cost = move_a.cost;
+        burrow.apply(move_a);
+
+        assert_eq!(burrow.energy_used, move_a_cost);
+        assert_eq!(burrow.map.get(&(6, 1)), None);
+        assert_eq!(burrow.map.get(&(3, 2)), Some(&'A'));
+    }
+
+    #[test]
+    fn test_move_into_rooms_small_burrow() {
+        let input = "
+        #############
+        #B....A...DC#
+        ###.#C#.#.###
+          #A#B#D#.#
+          #########
+    ";
+        let mut burrow = Burrow::new(input);
+
+        burrow.move_into_rooms();
+
+        // A:  4 *    1 =    4
+        // B:  5 *   10 =   50
+        // C: 10 *  100 = 1000
+        // D:  8 * 1000 = 8000
+
+        assert!(burrow.organized());
+        assert_eq!(burrow.energy_used, 4 + 50 + 1000 + 8000);
+    }
+
+    #[test]
+    fn test_moveable_amphipods_in_rooms_positions() {
+        let input = "
+        #############
+        #B....B.....#
+        ###.#.#A#D###
+          #A#C#D#C#
+          #########
+    ";
+        let burrow = Burrow::new(input);
+
+        assert_eq!(
+            burrow.moveable_amphipods_in_rooms_positions(),
+            vec![(5, 3), (7, 2), (9, 2)]
+        );
+    }
+
+    #[test]
+    fn test_moves_into_hallway() {
+        let input = "
+        #############
+        #...........#
+        ###B#C#A#D###
+          #A#B#D#C#
+          #########
+    ";
+        let burrow = Burrow::new(input);
+
+        assert_eq!(burrow.moves_into_hallway().len(), 28);
+    }
 }
